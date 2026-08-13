@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Dev Community · Presentations</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #181b22;
+    --accent: #e8b64c;
+    --text: #e6e6e6;
+    --muted: #9aa3b2;
+    --border: #262b36;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0 0 60px;
+  }
+  header {
+    background: linear-gradient(135deg, #14161c 0%, #1d2027 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  header .kicker {
+    display: inline-block;
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  header h1 {
+    font-size: 1.9rem;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  header .sub {
+    color: var(--muted);
+    font-size: 0.95rem;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  main { max-width: 860px; margin: 0 auto; padding: 0 20px; }
+  section h2 {
+    font-size: 1.15rem;
+    color: var(--accent);
+    margin: 44px 0 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  a.post-card {
+    display: block;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 14px;
+    text-decoration: none;
+    color: var(--text);
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  a.post-card:hover {
+    border-color: rgba(232,182,76,0.5);
+    transform: translateY(-1px);
+  }
+  .post-card .meta {
+    color: var(--accent);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .post-card h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+  .post-card p {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .post-card .read {
+    display: inline-block;
+    margin-top: 12px;
+    color: var(--accent);
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  footer {
+    max-width: 860px;
+    margin: 48px auto 0;
+    padding: 0 20px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<header>
+  <span class="kicker">AI Dev Community</span>
+  <h1>Presentations &amp; talk recaps</h1>
+  <div class="sub">TL;DR-first digests of conference talks worth your time.</div>
+</header>
+<main>
+
+<section>
+<h2>WeAreDevelopers World Congress 2026</h2>
+
+<a class="post-card" href="posts/agentic-assembly-line/">
+  <div class="meta">Thomas Dohmke · Entire · ~36 min</div>
+  <h3>The former GitHub CEO declares the SDLC dead: his fix is to review signals, not diffs</h3>
+  <p>Dohmke's WWC26 opening keynote: agents write most code, PRs have tripled in size, and 20% more code merges without a human ever reading it. His answer, built into his startup Entire: session logs stored in git next to the code, intent captured before the diff exists, and merge gates that rescore on every push. Plus a decentralized Git network for agent-scale traffic.</p>
+  <span class="read">Read the recap →</span>
+</a>
+
+<a class="post-card" href="posts/fin-next-generation-software/">
+  <div class="meta">Des Traynor · Fin · ~33 min</div>
+  <h3>Intercom bet 90% of the company on a product earning 1% of revenue, renamed itself Fin, and sold to Salesforce for $3.6B</h3>
+  <p>Fin's co-founder on the pivot that saved the company, and what it did to engineering: productivity tripled, 94% of code written by Claude, cost per shipped feature falling even at $180k a week in tokens. The core lesson: reliability compounds, so a chain of 99%-reliable agent steps makes an ~85%-reliable product nobody buys.</p>
+  <span class="read">Read the recap →</span>
+</a>
+
+<a class="post-card" href="posts/tasks-not-developers/">
+  <div class="meta">Peter Caron · 3T Software Labs · ~22 min</div>
+  <h3>Typists vanished, typing didn't: why AI replaces developer tasks, not developers</h3>
+  <p>The CEO of 3T Software Labs argues AI is unbundling the developer role the way word processors unbundled the typing pool: tasks get replaced, the coordinating function doesn't. The job shifts to governance: maintainable code, outcomes, risk, and the inflection points where agents need redirecting. In the Q&amp;A he bets his company against spec-driven development.</p>
+  <span class="read">Read the recap →</span>
+</a>
+
+<a class="post-card" href="posts/zeiss-spec-in-the-loop/">
+  <div class="meta">Stefan &amp; Bastian · Zeiss · ~30 min</div>
+  <h3>Zeiss threw away a microservice's code and let an agent regenerate it from spec: 80% match on the first shot, 90% after tweaks</h3>
+  <p>Two Zeiss architects run a real Java microservice through a spec-driven agentic workflow (Claude Code + agent skills, no human between plan and implementation), then go further: delete the codebase and regenerate it from the spec. Same-language regeneration nearly works; a Go rewrite fails exactly where the guardrail artifacts are missing.</p>
+  <span class="read">Read the recap →</span>
+</a>
+
+<a class="post-card" href="posts/ai-driven-development-tielke/">
+  <div class="meta">David Tielke · ~33 min</div>
+  <h3>He set out to prove AI can't build enterprise software. He shipped 420,000 lines in 45 days instead.</h3>
+  <p>A quality-obsessed architect rebuilt his company's business application with AI agents: 420k lines of .NET microservices, solo, in 45 working days. The useful part isn't the speed claim — it's his "harness" method: review the machinery that constrains the output, not the output itself.</p>
+  <span class="read">Read the recap →</span>
+</a>
+
+<a class="post-card" href="posts/agentic-employees-fintech/">
+  <div class="meta">Saša Fajković · Trade Republic · ~30 min</div>
+  <h3>A regulated bank runs an "AI employee" for ~47 teams on 100 bucks a month of infra</h3>
+  <p>Trade Republic's internal AI employee serves ~47 teams and 10,000+ sessions a week, solving over 90% of requests in some channels on its own. The design inverts the usual agent stack: guardrails and decision-making live in deterministic code the model can't override.</p>
+  <span class="read">Read the recap →</span>
+</a>
+
+<a class="post-card" href="posts/10x-organizations/">
+  <div class="meta">Justin Reock · Deputy CTO, DX · ~30 min</div>
+  <h3>The 10x engineer is a myth. The 11x organization is real, and AI is quietly raising its defect rate.</h3>
+  <p>Top and bottom performers inside the same company differ by only 21% — organizations differ by 11x. The gap is the environment, and AI is making it worse in places: change failure rates up, PR size nearly doubled. Treat productivity as a systems problem.</p>
+  <span class="read">Read the recap →</span>
+</a>
+
+</section>
+
+</main>
+<footer>AI Dev Community · Recaps based on public conference talks; all figures are the speakers' own.</footer>
+</body>
+</html>

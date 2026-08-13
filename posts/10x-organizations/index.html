@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The 10x engineer is a myth. The 11x organization is real, and AI is quietly raising its defect rate.</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #181b22;
+    --accent: #e8b64c;
+    --text: #e6e6e6;
+    --muted: #9aa3b2;
+    --border: #262b36;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0 0 60px;
+  }
+  header {
+    background: linear-gradient(135deg, #14161c 0%, #1d2027 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  header .kicker {
+    display: inline-block;
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  header h1 {
+    font-size: 1.9rem;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  header .sub {
+    color: var(--muted);
+    font-size: 0.95rem;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  header .sub a { color: var(--accent); text-decoration: none; }
+  .note {
+    max-width: 860px;
+    margin: 20px auto 0;
+    padding: 12px 18px;
+    background: rgba(232,182,76,0.08);
+    border: 1px solid rgba(232,182,76,0.25);
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-align: left;
+  }
+  main { max-width: 860px; margin: 0 auto; padding: 0 20px; }
+  section h2 {
+    font-size: 1.15rem;
+    color: var(--accent);
+    margin: 44px 0 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .intro-card, .takeaway {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 12px;
+  }
+  .intro-card p, .takeaway p { color: var(--muted); font-size: 0.92rem; }
+  .intro-card p.lead { color: var(--text); font-size: 1rem; }
+  .intro-card p + p { margin-top: 10px; }
+  .takeaway .head {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .takeaway .ts {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    height: 30px;
+    border-radius: 999px;
+    background: rgba(232,182,76,0.12);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+  .takeaway h3 { font-size: 1.02rem; font-weight: 600; }
+  .numbers-card ul {
+    list-style: none;
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+  .numbers-card ul li {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .numbers-card ul li:last-child { border-bottom: none; }
+  .numbers-card ul li strong { color: var(--text); font-variant-numeric: tabular-nums; }
+  .cta-card {
+    background: var(--card);
+    border: 1px solid rgba(232,182,76,0.35);
+    border-radius: 12px;
+    padding: 22px 20px;
+    margin-top: 8px;
+    text-align: center;
+  }
+  .cta-card a.button {
+    display: inline-block;
+    background: var(--accent);
+    color: #14161c;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 10px 22px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .cta-card p { color: var(--muted); font-size: 0.9rem; }
+  footer {
+    max-width: 860px;
+    margin: 48px auto 0;
+    padding: 0 20px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<header>
+  <span class="kicker">AI Dev Community · Video recap</span>
+  <h1>The 10x engineer is a myth. The 11x organization is real, and AI is quietly raising its defect rate.</h1>
+  <div class="sub">WeAreDevelopers WWC26 &middot; Justin Reock (Deputy CTO, DX) &middot; ~30 min &middot; <a href="https://youtube.com/watch?v=TC9r4UmlYnk">Watch on YouTube</a></div>
+  <div class="note"><strong>Note:</strong> Recap based on cleaned auto-generated captions, so double-check exact figures against the video before quoting them. Reock works for DX; the last third of the talk overlaps with their product, but the research he cites stands on its own.</div>
+</header>
+<main>
+
+<section>
+<h2>The short version</h2>
+<div class="intro-card">
+<p class="lead">Justin Reock argues that 10x developers don't exist, but 10x organizations do. In the Coding War Games study behind Peopleware (about 700 engineers, about 100 companies), top and bottom performers inside the same company differed by only 21%, while organizations differed by 11x. The gap came from the environment: quiet, privacy, and the ability to mute interruptions, not language, salary, or tenure.</p>
+<p>Now his company's data shows AI making that environment worse in places: some organizations' change failure rate rose by up to 2 percentage points in 16 months against an industry benchmark of 4%, meaning up to 50% more shipped defects, while average PR size nearly doubled. The idea worth stealing: stop hunting for 10x hires and treat productivity as a systems problem, because everything you'd fix for humans (docs, modular code, fast CI, non-flaky tests) is exactly what makes agents effective too.</p>
+</div>
+</section>
+
+<section>
+<h2>Key takeaways</h2>
+
+<div class="takeaway"><div class="head"><span class="ts">1</span><h3>Environment beats talent</h3></div>
+<p>The Coding War Games found high performers clustered in some companies and low performers in others. Top performers had about twice the dedicated workspace, were twice as likely to call their space acceptably quiet, three times as likely to call it private, and five times as likely to be able to silence their phone (today: Slack and Teams). Language and tenure made little difference, and top performers earned only about 10% more. Deming's version: 90 to 95% of an organization's output is determined by the system, not the worker.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">2</span><h3>Optimize throughput, not cost</h3></div>
+<p>From Goldratt's theory of constraints (The Goal, which The Phoenix Project openly retells for software): a business reduces to cost, throughput, and inventory. Code that's written but not shipped is work-in-progress inventory, and it rots like the physical kind. This is why DevOps shortened the distance from keyboard to production in the first place.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">3</span><h3>Flow is a chemical budget</h3></div>
+<p>Reock cites recent neuroscience (EEG caps on improv jazz guitarists, via Scientific American): each context switch releases glutamate in the prefrontal cortex, closing that "chapter" of work, and re-entering flow costs 10 to 15 minutes. Enough switches and you hit cognitive fatigue for the day. His warning for 2026: juggling 20 agent CLIs is context switching too. He has a name for it: AI brain fry.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">4</span><h3>No single metric survives being a target</h3></div>
+<p>DORA metrics are 11 years old and still useful, but they miss friction inside the developer's day. SPACE adds five balancing dimensions precisely so no one number can be gamed (his example: asked for 10 PRs a week, he'll update a readme 10 times before Monday coffee). DevEx adds flow state, feedback loops, and cognitive load. DX's Core Four distills the three frameworks; the DXI index tracks 14 drivers of developer experience. Metrics are read at system level, never per individual, both because of Goodhart's law and because the senior engineer doing mentorship and reviews looks unproductive right up until you remove them and the whole team slows down.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">5</span><h3>"AI readiness" is developer experience, renamed</h3></div>
+<p>What agents need to perform well: clear and accurate documentation, straightforward data structures, modular code, fast CI, non-flaky tests. What humans needed all along: the same list. To measure whether AI investment works, DX combines API telemetry (utilization) with in-workflow experience sampling and self-reported surveys, then correlates tool cohorts (daily Claude users vs daily Cursor users) against core metrics like PR size and review pushback.</p></div>
+
+</section>
+
+<section>
+<h2>The numbers</h2>
+<div class="intro-card numbers-card">
+<ul>
+<li><strong>21% vs 11x:</strong> productivity spread between top and bottom performers within one organization, vs the spread across organizations (Coding War Games, ~700 engineers, ~100 companies).</li>
+<li><strong>~10%:</strong> how much more the top performers earned than the bottom performers; their code was essentially defect-free.</li>
+<li><strong>90 to 95%:</strong> share of productivity output determined by the system, not the worker (Deming).</li>
+<li><strong>10 to 15 minutes:</strong> cost of re-entering flow after each context switch.</li>
+<li><strong>Up to 2 points in 16 months:</strong> rise in change failure rate at some companies, against a ~4% industry benchmark: up to 50% more shipped defects (DX platform data).</li>
+<li><strong>Almost 2x:</strong> growth in average PR size over the same 16 months.</li>
+<li><strong>14 drivers:</strong> what the DXI index tracks; half of DX's customers reach 100% survey participation.</li>
+</ul>
+</div>
+</section>
+
+<section>
+<h2>Caveats</h2>
+<div class="intro-card">
+<p>Reock names the big one himself: he's selling this. The Core Four and DXI are DX products, and the talk ends near their booth. The Coding War Games data is from the mid-80s, self-timed and individual, so treat the exact ratios as directional. The AI defect data comes from DX's own customer base, not a public dataset. And his benchmark advice cuts against his own industry numbers: only benchmark against yourself, since nobody ever hits a DXI of 100.</p>
+</div>
+</section>
+
+<section>
+<h2>Why it matters for Teams AI builders</h2>
+<div class="intro-card">
+<p>Most of our AI conversations are about individual leverage: better prompts, better harnesses, more agents. This talk says the ceiling on all of that is organizational, and that the boring backlog items (flaky tests, slow CI, stale docs, tangled modules) are now double-priced because they throttle both the humans and the agents. If the 2026 question is "we spent 10 million on tokens, where's the 10x," the answer starts with whether the codebase was ready for either species of developer.</p>
+</div>
+</section>
+
+<section>
+<h2>Join the discussion</h2>
+<div class="cta-card">
+<a class="button" href="https://youtube.com/watch?v=TC9r4UmlYnk">▶ Watch the full video</a>
+<p>Reock claims that running 20 agents in parallel is just context switching with extra steps, and that "AI brain fry" is the new cognitive fatigue. For those of you orchestrating multiple agents daily: does supervising agents feel like flow or like interrupt handling? And is there a number of parallel agents beyond which your own review quality visibly drops?</p>
+</div>
+</section>
+
+</main>
+<footer>Source: WeAreDevelopers, "WWC26 - Building 10x Organizations Using Modern Productivity Metrics" (https://youtube.com/watch?v=TC9r4UmlYnk)<br>
+Web version: <a href="https://ppruchnerovic.github.io/presentations/posts/10x-organizations/" style="color: var(--accent); text-decoration: none;">https://ppruchnerovic.github.io/presentations/posts/10x-organizations/</a></footer>
+
+<style>
+  .teams-copy {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 10;
+    text-align: right;
+  }
+  .teams-copy button {
+    font: inherit;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 12px 20px;
+    border-radius: 999px;
+    border: none;
+    background: var(--accent);
+    color: #14161c;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .teams-copy .status {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--text);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    max-width: 260px;
+    display: none;
+  }
+</style>
+
+<div class="teams-copy">
+  <button type="button" onclick="copyForTeams()">Copy for Teams</button>
+  <div class="status" id="teams-copy-status"></div>
+</div>
+
+<template id="teams-post">
+<p><strong>The 10x engineer is a myth. The 11x organization is real, and AI is quietly raising its defect rate.</strong></p>
+<p>&nbsp;</p>
+<p><strong>TL;DR:</strong> Justin Reock, Deputy CTO at DX, argues that 10x developers don't exist, but 10x organizations do. In the Coding War Games study behind Peopleware (about 700 engineers, about 100 companies), top and bottom performers inside the same company differed by only 21%, while organizations differed by 11x. The gap came from the environment: quiet, privacy, and the ability to mute interruptions, not language, salary, or tenure. Now his company's data shows AI making that environment worse in places: some organizations' change failure rate rose by up to 2 percentage points in 16 months against an industry benchmark of 4%, meaning up to 50% more shipped defects, while average PR size nearly doubled. The idea worth stealing: stop hunting for 10x hires and treat productivity as a systems problem, because everything you'd fix for humans (docs, modular code, fast CI, non-flaky tests) is exactly what makes agents effective too.</p>
+<p>&nbsp;</p>
+<p>Watch: <a href="https://youtube.com/watch?v=TC9r4UmlYnk">https://youtube.com/watch?v=TC9r4UmlYnk</a> (WeAreDevelopers WWC26, ~30 min)</p>
+<p>&nbsp;</p>
+<p><strong>The talk</strong></p>
+<p>&nbsp;</p>
+<p>Reock has been iterating on this talk for seven years; it started life as "DevOps, 12-factor, and open source." It walks through four decades of research on what makes engineering organizations productive: Deming, Peopleware, the theory of constraints, then today's metric frameworks (DORA, SPACE, DevEx, and DX's own Core Four), ending with what DX's platform data says AI is doing to those numbers. He works for DX, so the last third overlaps with their product, but the research he cites stands on its own.</p>
+<p>&nbsp;</p>
+<p><strong>The argument</strong></p>
+<p>&nbsp;</p>
+<p>1. <strong>Environment beats talent.</strong> The Coding War Games (mid-80s, individual work, real business task, defects tracked) found high performers clustered in some companies and low performers in others. Top performers had about twice the dedicated workspace, were twice as likely to call their space acceptably quiet, three times as likely to call it private, and five times as likely to be able to silence their phone (today: Slack and Teams). Language made little difference, tenure made little difference past six months, and top performers earned only about 10% more. Deming's version: 90 to 95% of an organization's output is determined by the system, not the worker.</p>
+<p>&nbsp;</p>
+<p>2. <strong>Optimize throughput, not cost.</strong> From Goldratt's theory of constraints (The Goal, which The Phoenix Project openly retells for software): a business reduces to cost, throughput, and inventory. Code that's written but not shipped is work-in-progress inventory, and it rots like the physical kind. This is why DevOps shortened the distance from keyboard to production in the first place.</p>
+<p>&nbsp;</p>
+<p>3. <strong>Flow is a chemical budget.</strong> Reock cites recent neuroscience (EEG caps on improv jazz guitarists, via Scientific American): each context switch releases glutamate in the prefrontal cortex, closing that "chapter" of work, and re-entering flow costs 10 to 15 minutes. Enough switches and you hit cognitive fatigue for the day. His warning for 2026: juggling 20 agent CLIs is context switching too. He has a name for it: AI brain fry.</p>
+<p>&nbsp;</p>
+<p>4. <strong>No single metric survives being a target.</strong> DORA metrics are 11 years old and still useful, but they miss friction inside the developer's day. SPACE adds five balancing dimensions precisely so no one number can be gamed (his example: asked for 10 PRs a week, he'll update a readme 10 times before Monday coffee). DevEx adds flow state, feedback loops, and cognitive load. DX's Core Four distills the three frameworks; the DXI index tracks 14 drivers of developer experience. Metrics are read at system level, never per individual, both because of Goodhart's law and because the senior engineer doing mentorship and reviews looks unproductive right up until you remove them and the whole team slows down.</p>
+<p>&nbsp;</p>
+<p>5. <strong>"AI readiness" is developer experience, renamed.</strong> What agents need to perform well: clear and accurate documentation, straightforward data structures, modular code, fast CI, non-flaky tests. What humans needed all along: the same list. To measure whether AI investment works, DX combines API telemetry (utilization) with in-workflow experience sampling and self-reported surveys, then correlates tool cohorts (daily Claude users vs daily Cursor users) against core metrics like PR size and review pushback.</p>
+<p>&nbsp;</p>
+<p><strong>The numbers</strong></p>
+<p>&nbsp;</p>
+<p>• 21% productivity spread between top and bottom performers within one organization; 11x spread across organizations (Coding War Games, ~700 engineers, ~100 companies)<br>
+• Top performers earned only ~10% more than bottom performers; their code was essentially defect-free<br>
+• 90 to 95% of productivity output determined by the system, not the worker (Deming)<br>
+• 10 to 15 minutes to re-enter flow after each context switch<br>
+• Change failure rate up by as much as 2 percentage points per company over 16 months, against a ~4% industry benchmark: up to 50% more shipped defects (DX platform data)<br>
+• Average PR size almost doubled over the same 16 months<br>
+• DXI: 14 drivers; half of DX's customers reach 100% survey participation</p>
+<p>&nbsp;</p>
+<p><strong>Caveats</strong></p>
+<p>&nbsp;</p>
+<p>Reock names the big one himself: he's selling this. The Core Four and DXI are DX products, and the talk ends near their booth. The Coding War Games data is from the mid-80s, self-timed and individual, so treat the exact ratios as directional. The AI defect data comes from DX's own customer base, not a public dataset. And his benchmark advice cuts against his own industry numbers: only benchmark against yourself, since nobody ever hits a DXI of 100. The numbers above come from auto-generated captions, so verify against the video before quoting them anywhere serious.</p>
+<p>&nbsp;</p>
+<p><strong>Why it matters here</strong></p>
+<p>&nbsp;</p>
+<p>Most of our AI conversations are about individual leverage: better prompts, better harnesses, more agents. This talk says the ceiling on all of that is organizational, and that the boring backlog items (flaky tests, slow CI, stale docs, tangled modules) are now double-priced because they throttle both the humans and the agents. If the 2026 question is "we spent 10 million on tokens, where's the 10x," the answer starts with whether the codebase was ready for either species of developer.</p>
+<p>&nbsp;</p>
+<p><strong>Question for the channel:</strong> Reock claims that running 20 agents in parallel is just context switching with extra steps, and that "AI brain fry" is the new cognitive fatigue. For those of you orchestrating multiple agents daily: does supervising agents feel like flow or like interrupt handling? And is there a number of parallel agents beyond which your own review quality visibly drops?</p>
+<p>&nbsp;</p>
+<p>Web version: <a href="https://ppruchnerovic.github.io/presentations/posts/10x-organizations/">https://ppruchnerovic.github.io/presentations/posts/10x-organizations/</a></p>
+</template>
+
+<script>
+function teamsPlainText(container) {
+  return Array.from(container.querySelectorAll('p')).map(function (p) {
+    var c = p.cloneNode(true);
+    c.querySelectorAll('br').forEach(function (b) { b.replaceWith('\n'); });
+    return c.textContent;
+  }).filter(function (s) {
+    return s.replace(/\u00a0/g, ' ').trim() !== '';
+  }).join('\n\n');
+}
+
+async function copyForTeams() {
+  var status = document.getElementById('teams-copy-status');
+  var container = document.createElement('div');
+  container.appendChild(document.getElementById('teams-post').content.cloneNode(true));
+  var html = container.innerHTML;
+  var text = teamsPlainText(container);
+  status.style.display = 'block';
+  try {
+    await navigator.clipboard.write([new ClipboardItem({
+      'text/html': new Blob([html], { type: 'text/html' }),
+      'text/plain': new Blob([text], { type: 'text/plain' })
+    })]);
+    status.textContent = 'Copied. Paste into Teams with a normal paste: bold is kept, colors are not.';
+  } catch (e) {
+    status.textContent = 'Automatic copy is not supported in this browser.';
+  }
+}
+</script>
+
+</body>
+</html>

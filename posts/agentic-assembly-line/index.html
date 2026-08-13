@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The former GitHub CEO declares the SDLC dead: his fix is to review signals, not diffs</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #181b22;
+    --accent: #e8b64c;
+    --text: #e6e6e6;
+    --muted: #9aa3b2;
+    --border: #262b36;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0 0 60px;
+  }
+  header {
+    background: linear-gradient(135deg, #14161c 0%, #1d2027 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  header .kicker {
+    display: inline-block;
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  header h1 {
+    font-size: 1.9rem;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  header .sub {
+    color: var(--muted);
+    font-size: 0.95rem;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  header .sub a { color: var(--accent); text-decoration: none; }
+  .note {
+    max-width: 860px;
+    margin: 20px auto 0;
+    padding: 12px 18px;
+    background: rgba(232,182,76,0.08);
+    border: 1px solid rgba(232,182,76,0.25);
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-align: left;
+  }
+  main { max-width: 860px; margin: 0 auto; padding: 0 20px; }
+  section h2 {
+    font-size: 1.15rem;
+    color: var(--accent);
+    margin: 44px 0 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .intro-card, .takeaway {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 12px;
+  }
+  .intro-card p, .takeaway p { color: var(--muted); font-size: 0.92rem; }
+  .intro-card p.lead { color: var(--text); font-size: 1rem; }
+  .intro-card p + p { margin-top: 10px; }
+  .takeaway .head {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .takeaway .ts {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    height: 30px;
+    border-radius: 999px;
+    background: rgba(232,182,76,0.12);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+  .takeaway h3 { font-size: 1.02rem; font-weight: 600; }
+  .numbers-card ul {
+    list-style: none;
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+  .numbers-card ul li {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .numbers-card ul li:last-child { border-bottom: none; }
+  .numbers-card ul li strong { color: var(--text); font-variant-numeric: tabular-nums; }
+  .cta-card {
+    background: var(--card);
+    border: 1px solid rgba(232,182,76,0.35);
+    border-radius: 12px;
+    padding: 22px 20px;
+    margin-top: 8px;
+    text-align: center;
+  }
+  .cta-card a.button {
+    display: inline-block;
+    background: var(--accent);
+    color: #14161c;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 10px 22px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .cta-card p { color: var(--muted); font-size: 0.9rem; }
+  footer {
+    max-width: 860px;
+    margin: 48px auto 0;
+    padding: 0 20px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<header>
+  <span class="kicker">AI Dev Community · Video recap</span>
+  <h1>The former GitHub CEO declares the SDLC dead: 20% more code merges without a human ever reading it, and his fix is to review signals, not diffs</h1>
+  <div class="sub">WeAreDevelopers WWC26 · ~36 min · <a href="https://youtube.com/watch?v=ggh3kdcer2U">Watch on YouTube</a></div>
+  <div class="note"><strong>Note:</strong> Thomas Dohmke, who ran GitHub until 2025, gave the WWC26 opening keynote as founder of his startup Entire; the second half doubles as a product announcement. This recap is based on cleaned auto-generated captions, so treat exact numbers with care; most figures are vendors' own claims.</div>
+</header>
+<main>
+
+<section>
+<h2>The short version</h2>
+<div class="intro-card">
+<p class="lead">Dohmke's diagnosis: agents now write most code, pull requests have tripled in size, and over 20% more code gets merged without a human ever looking at it. We have entered what he calls "the era of the YOLO merge," and he admits to plenty of his own.</p>
+<p>His answer, built into his startup Entire: store agent session logs in the git repo next to the code, capture intent before the diff exists, and replace line-by-line review with "gates" (confidence, risk, drift, security scores) that rerun on every push. He also announced a decentralized Git network, arguing centralized git can't survive agent-scale traffic. The idea worth stealing works without his product: treat agent session logs as a versioned artifact your team and your agents can both learn from, and write down merge criteria a machine can check.</p>
+</div>
+</section>
+
+<section>
+<h2>Key takeaways</h2>
+
+<div class="takeaway"><div class="head"><span class="ts">1</span><h3>Agents already write most code</h3></div>
+<p>Anthropic says 70-90% of its code is written with AI, the Codex team claims 100% of Codex is written by Codex, and Google is on record at 75% of new code. Pragmatic Engineer data on Linear shows teams with agents shipping five times as many PRs as two years ago.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">2</span><h3>Code review is the part that cracked</h3></div>
+<p>Cursor's data shows PR size up three times (by design: nobody wants to interrupt an agent for a small PR) and over 20% more code merged without a human ever looking at it. His honest summary of the average reviewer facing an agent's morning output: "fuck that." Meanwhile newer models find ten times as many issues in review as a human reviewer, who tends to stop after three bugs because three feels like a job done.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">3</span><h3>The loops are inverting</h3></div>
+<p>DevOps spent 20 years making the inner and outer loop smaller, because a human ran both and human attention is the constraint. With agents, the leading practitioners (he name-checks Geoffrey Huntley's Ralph loop, plus Peter Steinberger of OpenClaw and Boris Cherny of Claude Code) do the opposite: make the loop as big as possible, give the agent an exit condition, and let it grind until the eval passes. The bottleneck moves from writing code to capturing intent and proving the loop delivered what was asked. That is his "agentic assembly line," and his thesis: the SDLC as we know it is dead.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">4</span><h3>Session logs are the second most important artifact in software</h3></div>
+<p>Code stays first, because it is the only deterministic artifact. But the chat session is where the "why" lives, and today it dies on the laptop where the agent ran. His answer: commit session logs to a git ref alongside the code. Entire's MIT-licensed CLI hooks into Claude Code and pushes session logs to the repo automatically, so a teammate (or an agent) can ask why a commit exists, read extracted learnings and friction points, and stop repeating last week's mistakes. The live demo of this failed on stage (auth loop with no phone), so he showed a pre-populated demo repo instead.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">5</span><h3>Trails: review signals instead of diffs</h3></div>
+<p>Shown for the first time in this keynote, by Rizel Scarlett (Entire devrel, maintainer of the Goose coding agent, which currently has 80+ open PRs she can't deeply review). A "trail" starts with written intent before any code exists, then links the plan, the agent's checkpoints, prompts, tool calls, and the merge. On every push, "runners" (config files in the repo, like CI workflows for review) rescore gates for confidence, risk, drift, and security. Merge criteria become those signals plus a teammate's approval, not a line-by-line read. His analogy: you drive a car by its dashboard, not by watching raw engine telemetry. His pitch: "a world where 'looks good to me' actually means something."</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">6</span><h3>Centralized git won't hold at agent scale</h3></div>
+<p>He quotes Linus Torvalds' 2007 Google talk (distributed, fast, reliable, or "you're not worth using") and points out we spent two decades recentralizing git into GitHub, GitLab, and Bitbucket, optimized for human speed. GitHub's own charts of PRs, commits, and new repos are bending sharply upward as every developer runs ten agents in parallel. Announced the day before the keynote: Entire rebuilt its Git backend as a decentralized network with nodes in the US, Europe, and Australia, region pinning, multi-region repos, GitHub mirroring to get on board, and a promise to open source it all.</p></div>
+
+</section>
+
+<section>
+<h2>The numbers</h2>
+<div class="intro-card numbers-card">
+<ul>
+<li><strong>70-90%</strong> of Anthropic's code written with AI (their own claim); 100% of Codex written by Codex (ditto); 75% of new code at Google</li>
+<li><strong>5x</strong> as many PRs shipped by Linear teams using agents vs two years ago (Pragmatic Engineer data)</li>
+<li><strong>3x</strong> growth in PR size (Cursor data)</li>
+<li><strong>20%+</strong> more code merged without a human ever looking at it (Cursor data)</li>
+<li><strong>10x</strong> as many issues found by current review models as by a human reviewer</li>
+<li><strong>80+</strong> open PRs on Goose, the open-source agent Rizel Scarlett maintains</li>
+<li><strong>2.1 million</strong> pushes per hour on a single repo on Entire's network</li>
+<li><strong>1 billion+</strong> repos on GitHub that Entire hopes to mirror</li>
+</ul>
+</div>
+</section>
+
+<section>
+<h2>Caveats</h2>
+<div class="intro-card">
+<p>This is a founder's keynote: the diagnosis leans on data, but much of that data comes from vendors with their own story to tell, and the prescription is a pitch for his own product, with Trails shown for the first time on this stage. Most of the striking numbers are vendors' own claims (Anthropic, the Codex team, Cursor slides, Entire's push benchmark) with no independent check available. The "review signals instead of code" idea assumes you trust the gates, and the talk doesn't address who reviews the runners or what happens when an agent games an eval. The demo of the core session-log workflow failed live and was shown from a canned repo. And this recap is built from auto-generated captions: names were verified externally where possible, but treat exact figures and the garbled model names on one slide with care. Dohmke's own caveat is worth keeping too: agents are "dumb but relentless," and his company runs a Slack channel of agents confessing they went off the rails.</p>
+</div>
+</section>
+
+<section>
+<h2>Why it matters for Teams AI builders</h2>
+<div class="intro-card">
+<p>The problem he describes is one this community already has: agent output has outgrown human review capacity, and "I read every line" is quietly becoming fiction. Two patterns are stealable today without touching Entire. First, session logs as a team artifact: transcripts of agent sessions, committed or summarized into the repo, turn individual prompting experience into institutional knowledge that both new teammates and agents can read (several of us already keep CLAUDE.md learnings; this extends the same idea to the full session). Second, machine-checkable merge criteria: writing intent down before the agent starts, and encoding what "reviewable" means (tests, risk checks, drift from stated intent) as config that reruns on every push, is a practice, not a product. Whether the decentralized git network matters to you depends on whether you believe his claim that agent traffic breaks centralized hosting; that one is a bet, not a finding.</p>
+</div>
+</section>
+
+<section>
+<h2>Join the discussion</h2>
+<div class="cta-card">
+<a class="button" href="https://youtube.com/watch?v=ggh3kdcer2U">▶ Watch the full video</a>
+<p>Dohmke admits he merges agent PRs without reading them, and Cursor's data says he has plenty of company. What is your actual bar for merging agent-written code right now: full read, spot-check, or green CI and gut feeling? And would committing your agent session logs to the repo for teammates to read change anything, or is that just more output nobody reviews?</p>
+</div>
+</section>
+
+</main>
+<footer>Source: WeAreDevelopers, "WWC26 - The Agentic Assembly Line" (https://youtube.com/watch?v=ggh3kdcer2U)<br>
+Web version: <a href="https://ppruchnerovic.github.io/presentations/posts/agentic-assembly-line/" style="color: var(--accent); text-decoration: none;">https://ppruchnerovic.github.io/presentations/posts/agentic-assembly-line/</a></footer>
+
+<style>
+  .teams-copy {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 10;
+    text-align: right;
+  }
+  .teams-copy button {
+    font: inherit;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 12px 20px;
+    border-radius: 999px;
+    border: none;
+    background: var(--accent);
+    color: #14161c;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .teams-copy .status {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--text);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    max-width: 260px;
+    display: none;
+  }
+</style>
+
+<div class="teams-copy">
+  <button type="button" onclick="copyForTeams()">Copy for Teams</button>
+  <div class="status" id="teams-copy-status"></div>
+</div>
+
+<template id="teams-post">
+<p><strong>The former GitHub CEO declares the SDLC dead: 20% more code merges without a human ever reading it, and his fix is to review signals, not diffs</strong></p>
+<p>&nbsp;</p>
+<p><strong>TL;DR:</strong> Thomas Dohmke, who ran GitHub until 2025, opened WeAreDevelopers WWC26 with a blunt diagnosis: agents now write most code, pull requests have tripled in size, and over 20% more code gets merged without a human ever looking at it. We have entered what he calls "the era of the YOLO merge," and he admits to plenty of his own. His answer, built into his startup Entire: store agent session logs in the git repo next to the code, capture intent before the diff exists, and replace line-by-line review with "gates" (confidence, risk, drift, security scores) that rerun on every push. He also announced a decentralized Git network, arguing centralized git can't survive agent-scale traffic. The idea worth stealing works without his product: treat agent session logs as a versioned artifact your team and your agents can both learn from, and write down merge criteria a machine can check.</p>
+<p>&nbsp;</p>
+<p>Watch: <a href="https://youtube.com/watch?v=ggh3kdcer2U">https://youtube.com/watch?v=ggh3kdcer2U</a> (WeAreDevelopers WWC26, ~36 min)</p>
+<p>&nbsp;</p>
+<p><strong>The talk</strong></p>
+<p>&nbsp;</p>
+<p>Dohmke gave his first WeAreDevelopers keynote in 2022, back when he was selling the claim that AI would write 80% of code. This year's opening keynote is his first as founder of Entire, the startup he launched after leaving GitHub, and the second half doubles as a product announcement. He frames the last four years as geology: 2022-2025 was the "Triassic period" (autocomplete, chat, agent mode), and since November 2025 (Claude Opus 4.5, GPT-5.1 Codex) we are in the "Jurassic era," coexisting with a new species that is smart some of the time, never tires, and runs while we sleep.</p>
+<p>&nbsp;</p>
+<p><strong>The argument</strong></p>
+<p>&nbsp;</p>
+<p>1. <strong>Agents already write most code.</strong> Anthropic says 70-90% of its code is written with AI, the Codex team claims 100% of Codex is written by Codex, and Google is on record at 75% of new code. Pragmatic Engineer data on Linear shows teams with agents shipping five times as many PRs as two years ago.</p>
+<p>&nbsp;</p>
+<p>2. <strong>Code review is the part that cracked.</strong> Cursor's data shows PR size up three times (by design: nobody wants to interrupt an agent for a small PR) and over 20% more code merged without a human ever looking at it. His honest summary of the average reviewer facing an agent's morning output: "fuck that." Meanwhile newer models find ten times as many issues in review as a human reviewer, who tends to stop after three bugs because three feels like a job done.</p>
+<p>&nbsp;</p>
+<p>3. <strong>The loops are inverting.</strong> DevOps spent 20 years making the inner and outer loop smaller, because a human ran both and human attention is the constraint. With agents, the leading practitioners (he name-checks Geoffrey Huntley's Ralph loop, plus Peter Steinberger of OpenClaw and Boris Cherny of Claude Code) do the opposite: make the loop as big as possible, give the agent an exit condition, and let it grind until the eval passes. The bottleneck moves from writing code to capturing intent and proving the loop delivered what was asked. That is his "agentic assembly line," and his thesis: the SDLC as we know it is dead.</p>
+<p>&nbsp;</p>
+<p>4. <strong>Session logs are the second most important artifact in software.</strong> Code stays first, because it is the only deterministic artifact. But the chat session is where the "why" lives, and today it dies on the laptop where the agent ran. His answer: commit session logs to a git ref alongside the code. Entire's MIT-licensed CLI hooks into Claude Code and pushes session logs to the repo automatically, so a teammate (or an agent) can ask why a commit exists, read extracted learnings and friction points, and stop repeating last week's mistakes. The live demo of this failed on stage (auth loop with no phone), so he showed a pre-populated demo repo instead.</p>
+<p>&nbsp;</p>
+<p>5. <strong>Trails: review signals instead of diffs.</strong> Shown for the first time in this keynote, by Rizel Scarlett (Entire devrel, maintainer of the Goose coding agent, which currently has 80+ open PRs she can't deeply review). A "trail" starts with written intent before any code exists, then links the plan, the agent's checkpoints, prompts, tool calls, and the merge. On every push, "runners" (config files in the repo, like CI workflows for review) rescore gates for confidence, risk, drift, and security. Merge criteria become those signals plus a teammate's approval, not a line-by-line read. His analogy: you drive a car by its dashboard, not by watching raw engine telemetry. His pitch: "a world where 'looks good to me' actually means something."</p>
+<p>&nbsp;</p>
+<p>6. <strong>Centralized git won't hold at agent scale.</strong> He quotes Linus Torvalds' 2007 Google talk (distributed, fast, reliable, or "you're not worth using") and points out we spent two decades recentralizing git into GitHub, GitLab, and Bitbucket, optimized for human speed. GitHub's own charts of PRs, commits, and new repos are bending sharply upward as every developer runs ten agents in parallel. Announced the day before the keynote: Entire rebuilt its Git backend as a decentralized network with nodes in the US, Europe, and Australia, region pinning, multi-region repos, GitHub mirroring to get on board, and a promise to open source it all.</p>
+<p>&nbsp;</p>
+<p><strong>The numbers</strong></p>
+<p>&nbsp;</p>
+<p>• 70-90% of Anthropic's code written with AI (their own claim); 100% of Codex written by Codex (ditto); 75% of new code at Google<br>
+• 5x as many PRs shipped by Linear teams using agents vs two years ago (Pragmatic Engineer data)<br>
+• 3x growth in PR size (Cursor data)<br>
+• 20%+ more code merged without a human ever looking at it (Cursor data)<br>
+• 10x as many issues found by current review models as by a human reviewer<br>
+• 80+ open PRs on Goose, the open-source agent Rizel Scarlett maintains<br>
+• 2.1 million pushes per hour on a single repo on Entire's network<br>
+• 1 billion+ repos on GitHub that Entire hopes to mirror</p>
+<p>&nbsp;</p>
+<p><strong>Caveats</strong></p>
+<p>&nbsp;</p>
+<p>This is a founder's keynote: the diagnosis leans on data, but much of that data comes from vendors with their own story to tell, and the prescription is a pitch for his own product, with Trails shown for the first time on this stage. Most of the striking numbers are vendors' own claims (Anthropic, the Codex team, Cursor slides, Entire's push benchmark) with no independent check available. The "review signals instead of code" idea assumes you trust the gates, and the talk doesn't address who reviews the runners or what happens when an agent games an eval. The demo of the core session-log workflow failed live and was shown from a canned repo. And this recap is built from auto-generated captions: names were verified externally where possible, but treat exact figures and the garbled model names on one slide with care. Dohmke's own caveat is worth keeping too: agents are "dumb but relentless," and his company runs a Slack channel of agents confessing they went off the rails.</p>
+<p>&nbsp;</p>
+<p><strong>Why it matters here</strong></p>
+<p>&nbsp;</p>
+<p>The problem he describes is one this community already has: agent output has outgrown human review capacity, and "I read every line" is quietly becoming fiction. Two patterns are stealable today without touching Entire. First, session logs as a team artifact: transcripts of agent sessions, committed or summarized into the repo, turn individual prompting experience into institutional knowledge that both new teammates and agents can read (several of us already keep CLAUDE.md learnings; this extends the same idea to the full session). Second, machine-checkable merge criteria: writing intent down before the agent starts, and encoding what "reviewable" means (tests, risk checks, drift from stated intent) as config that reruns on every push, is a practice, not a product. Whether the decentralized git network matters to you depends on whether you believe his claim that agent traffic breaks centralized hosting; that one is a bet, not a finding.</p>
+<p>&nbsp;</p>
+<p>Watch: <a href="https://youtube.com/watch?v=ggh3kdcer2U">https://youtube.com/watch?v=ggh3kdcer2U</a></p>
+<p>&nbsp;</p>
+<p><strong>Question for the channel:</strong> Dohmke admits he merges agent PRs without reading them, and Cursor's data says he has plenty of company. What is your actual bar for merging agent-written code right now: full read, spot-check, or green CI and gut feeling? And would committing your agent session logs to the repo for teammates to read change anything, or is that just more output nobody reviews?</p>
+<p>&nbsp;</p>
+<p>Web version: <a href="https://ppruchnerovic.github.io/presentations/posts/agentic-assembly-line/">https://ppruchnerovic.github.io/presentations/posts/agentic-assembly-line/</a></p>
+</template>
+
+<script>
+function teamsPlainText(container) {
+  return Array.from(container.querySelectorAll('p')).map(function (p) {
+    var c = p.cloneNode(true);
+    c.querySelectorAll('br').forEach(function (b) { b.replaceWith('\n'); });
+    return c.textContent;
+  }).filter(function (s) {
+    return s.replace(/\u00a0/g, ' ').trim() !== '';
+  }).join('\n\n');
+}
+
+async function copyForTeams() {
+  var status = document.getElementById('teams-copy-status');
+  var container = document.createElement('div');
+  container.appendChild(document.getElementById('teams-post').content.cloneNode(true));
+  var html = container.innerHTML;
+  var text = teamsPlainText(container);
+  status.style.display = 'block';
+  try {
+    await navigator.clipboard.write([new ClipboardItem({
+      'text/html': new Blob([html], { type: 'text/html' }),
+      'text/plain': new Blob([text], { type: 'text/plain' })
+    })]);
+    status.textContent = 'Copied. Paste into Teams with a normal paste: bold is kept, colors are not.';
+  } catch (e) {
+    status.textContent = 'Automatic copy is not supported in this browser.';
+  }
+}
+</script>
+
+</body>
+</html>

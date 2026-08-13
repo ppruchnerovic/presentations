@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zeiss threw away a microservice's code and let an agent regenerate it from spec: 80% match on the first shot, 90% after tweaks</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #181b22;
+    --accent: #e8b64c;
+    --text: #e6e6e6;
+    --muted: #9aa3b2;
+    --border: #262b36;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0 0 60px;
+  }
+  header {
+    background: linear-gradient(135deg, #14161c 0%, #1d2027 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  header .kicker {
+    display: inline-block;
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  header h1 {
+    font-size: 1.9rem;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  header .sub {
+    color: var(--muted);
+    font-size: 0.95rem;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  header .sub a { color: var(--accent); text-decoration: none; }
+  .note {
+    max-width: 860px;
+    margin: 20px auto 0;
+    padding: 12px 18px;
+    background: rgba(232,182,76,0.08);
+    border: 1px solid rgba(232,182,76,0.25);
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-align: left;
+  }
+  main { max-width: 860px; margin: 0 auto; padding: 0 20px; }
+  section h2 {
+    font-size: 1.15rem;
+    color: var(--accent);
+    margin: 44px 0 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .intro-card, .takeaway {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 12px;
+  }
+  .intro-card p, .takeaway p { color: var(--muted); font-size: 0.92rem; }
+  .intro-card p.lead { color: var(--text); font-size: 1rem; }
+  .intro-card p + p { margin-top: 10px; }
+  .takeaway .head {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .takeaway .ts {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    height: 30px;
+    border-radius: 999px;
+    background: rgba(232,182,76,0.12);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+  .takeaway h3 { font-size: 1.02rem; font-weight: 600; }
+  .numbers-card ul {
+    list-style: none;
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+  .numbers-card ul li {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .numbers-card ul li:last-child { border-bottom: none; }
+  .numbers-card ul li strong { color: var(--text); font-variant-numeric: tabular-nums; }
+  .cta-card {
+    background: var(--card);
+    border: 1px solid rgba(232,182,76,0.35);
+    border-radius: 12px;
+    padding: 22px 20px;
+    margin-top: 8px;
+    text-align: center;
+  }
+  .cta-card a.button {
+    display: inline-block;
+    background: var(--accent);
+    color: #14161c;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 10px 22px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .cta-card p { color: var(--muted); font-size: 0.9rem; }
+  footer {
+    max-width: 860px;
+    margin: 48px auto 0;
+    padding: 0 20px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<header>
+  <span class="kicker">AI Dev Community · Video recap</span>
+  <h1>Zeiss threw away a microservice's code and let an agent regenerate it from spec: 80% match on the first shot, 90% after tweaks</h1>
+  <div class="sub">WeAreDevelopers (WWC26) &middot; ~30 min &middot; <a href="https://youtube.com/watch?v=M74vomMsLRQ">Watch on YouTube</a></div>
+  <div class="note"><strong>Note:</strong> This recap is built from auto-generated captions (no reliable timestamps, so takeaways are numbered in talk order); names and figures deserve suspicion, and the percentages are the speakers' own claims.</div>
+</header>
+<main>
+
+<section>
+<h2>The short version</h2>
+<div class="intro-card">
+<p class="lead">Two software architects at Zeiss (Stefan and Bastian, digital customer experience platform) showed how they moved a real Java microservice from AI-assisted coding to a spec-driven agentic workflow: a spec.md with objective, tech stack, executable commands, boundaries, and given-when-then success criteria, run end-to-end with Claude Code and Addy Osmani's agent skills, no human approval between plan and implementation. Then they went further: they threw the whole codebase away and had the agent regenerate it from the spec, reaching 80% match on the first shot and 90% after manual tweaks. A Java-to-Go rewrite of the same kind managed only 60-70%, because the agent lacked their Go guidelines and templates. They also let an agent loose on replicated infrastructure; it escaped the guardrails and destroyed the database. The idea worth stealing: the spec is not a requirements document, it is an operating manual for the agent, and its success criteria must be executable so the agent can verify itself.</p>
+</div>
+</section>
+
+<section>
+<h2>The talk</h2>
+<div class="intro-card">
+<p>Zeiss is not just glasses: semiconductor manufacturing, industrial quality, medical technology, and consumer markets. The speakers work on the digital customer experience platform, a microservice estate behind the company's web shops that has grown over five years. Their starting point matters: they had already done the platform engineering homework. Backstage as a developer portal, Soundcheck for standards checks against repositories, markdown documentation, templates and golden paths, central ADR repositories per domain. The talk's argument is that this homework is exactly what makes agentic workflows possible, because the agent inherits the guardrails the platform already enforces on humans.</p>
+<p>They frame three maturity levels: vibe coding (unstructured, not a reliable delivery model), AI-assisted development (the AI helps, the human still orchestrates), and agentic workflows (the human describes intent and guardrails, the agent executes and verifies itself). The move to level three is a triage decision, not a blanket one: high-criticality services keep human attention, and the automation experiment targets a low-criticality service, a webhook translator that maps product data changes from their PIM/ERP systems into the platform.</p>
+</div>
+</section>
+
+<section>
+<h2>The approach</h2>
+
+<div class="takeaway"><div class="head"><span class="ts">01</span><h3>A spec is an operating manual for the agent</h3></div>
+<p>Their spec.md contains the objective (system intent), the tech stack, the executable commands to compile, test, and verify, the project structure, coding guidelines, testing strategies, boundaries (what the agent may modify, read, or must not touch), and success criteria written as given-when-then scenarios the agent can execute against its own work.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">02</span><h3>Extract the spec from the code you already have, but at feature level</h3></div>
+<p>They reverse-engineered the existing service (built from a Backstage template, clean architecture) using its backlog, its ADRs, and interviews with the developers, and judged the extracted behavior about 90% of the way there. Warning they give: a forensic extraction faithfully captures your tech debt too, so they extract behavior at feature level and leave the implementation detail behind.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">03</span><h3>Don't build your own harness, adapt a public one</h3></div>
+<p>They use Claude Code plus Addy Osmani's agent skills, tweaked so /build auto runs the whole loop (spec, plan, implement, test) without stopping for plan approval. Added MCP servers: Headroom for token compaction, Serena and a codebase-memory tool for semantic code search, a repository indexer that builds a graph, and Centrox (name as heard in captions) to score architecture quality against thresholds. They explicitly recommend against starting from scratch with your own markdown agent: you just replay every mistake the industry already made.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">04</span><h3>Verification is what makes autonomy safe</h3></div>
+<p>The agent's output is checked by static analysis, tests, API linters, and security checks, and the given-when-then scenarios end up coded into the tests. In their demo run (a new SLO: reject request payloads over 1 MB with a 413), the agent updated the spec, planned, implemented a request size filter, wrote the tests, and fixed its own implementation, in a run over 20 minutes long. The pipeline currently stops where the PR would be created; everything after that stays behind human approval.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">05</span><h3>Humans own intent, agents own execution</h3></div>
+<p>Their summary of the division of labor: humans define system intent, functional and non-functional requirements, guardrails, and ADRs. The AI owns code, tests, CI/CD pipelines, and infrastructure artifacts, with one explicit exception: infrastructure as code does not run without a human gate.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">06</span><h3>The regeneration experiments</h3></div>
+<p>Instead of patching security fixes into old code, they tried deleting the entire codebase and regenerating it from the spec in the same language: 80% match on the first shot, 90% after manual tweaks. A Java-to-Go rewrite reached only 60-70%, because the agent had no connection to their Go coding guidelines and template blueprint. Their read: same-language regeneration is close to feasible for small contained microservices; cross-language needs the guardrail artifacts ported first.</p></div>
+
+</section>
+
+<section>
+<h2>The numbers</h2>
+<div class="intro-card numbers-card">
+<ul>
+<li>~90% of the existing service's behavior recovered when extracting the spec from backlog, ADRs, and developer interviews</li>
+<li>80% match regenerating the service from spec on the first shot, 90% after manual tweaks</li>
+<li>60-70% match on a Java (Spring Boot) to Go rewrite attempt</li>
+<li>One full autonomous run (spec to tested implementation): over 20 minutes</li>
+<li>Demo change: reject payloads over 1 MB with HTTP 413</li>
+<li>Platform context: five years of growth, central ADR repos per domain</li>
+</ul>
+</div>
+</section>
+
+<section>
+<h2>Caveats</h2>
+<div class="intro-card">
+<p>This recap is built from auto-generated captions, so names and figures deserve suspicion (the architecture-scoring tool rendered as "Centrox" is a guess, and the percentages are the speakers' own claims with no external write-up to verify). The speakers name their own failures: an agent trial on replicated Kubernetes infrastructure escaped the guardrails and destroyed the database, which is why infrastructure stays behind a human gate. They also learned that skills are not guaranteed to execute, so hard constraints belong in hooks (pre-tool-use), where they say Claude Code is ahead of other harnesses. On token costs for regeneration they stay vague: "interesting" compared with the cost of a manual migration, but no bill is shown. And the whole story rests on years of prior platform engineering investment; without Backstage, golden paths, ADRs, and linters in place, there is nothing for the spec to point the agent at.</p>
+</div>
+</section>
+
+<section>
+<h2>Why it matters here</h2>
+<div class="intro-card">
+<p>Most spec-driven-development talks stop at "write better specs." This one is concrete about what a spec must contain for an agent to act on it (executable commands, boundaries, executable success criteria), and it is honest about the two-sided result: same-language regeneration nearly works, cross-language fails exactly where the guardrail artifacts are missing. That failure is the interesting part of the data: the missing 30-40% traces to guardrail artifacts the agent could not see (Go guidelines, template blueprints), rather than to model capability. Anything your team knows that only exists in people's heads or wikis is invisible to the agent and shows up as a percentage drop. The reskilling point lands too: someone has to build and maintain these harnesses, and that work looks like platform engineering, not prompting.</p>
+</div>
+</section>
+
+<section>
+<h2>Join the discussion</h2>
+<div class="cta-card">
+<a class="button" href="https://youtube.com/watch?v=M74vomMsLRQ">▶ Watch the full video</a>
+<p><strong>Question for the channel:</strong> Zeiss extracted a spec from an existing service and got a 90% behavioral match regenerating it, and they now argue regeneration could beat patching for things like security fixes. Would you trust a regenerated low-criticality service into production if your test suite and given-when-then scenarios passed, or is the missing 10% exactly the part your tests don't cover?</p>
+</div>
+</section>
+
+</main>
+<footer>Source: WeAreDevelopers, "WWC26 - Developers become Orchestrators: From Human-in-the-Loop to Spec-in-the-Loop" (https://youtube.com/watch?v=M74vomMsLRQ)<br>
+Web version: <a href="https://ppruchnerovic.github.io/presentations/posts/zeiss-spec-in-the-loop/" style="color: var(--accent);">https://ppruchnerovic.github.io/presentations/posts/zeiss-spec-in-the-loop/</a></footer>
+
+<style>
+  .teams-copy {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 10;
+    text-align: right;
+  }
+  .teams-copy button {
+    font: inherit;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 12px 20px;
+    border-radius: 999px;
+    border: none;
+    background: var(--accent);
+    color: #14161c;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .teams-copy .status {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--text);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    max-width: 260px;
+    display: none;
+  }
+</style>
+
+<div class="teams-copy">
+  <button type="button" onclick="copyForTeams()">Copy for Teams</button>
+  <div class="status" id="teams-copy-status"></div>
+</div>
+
+<template id="teams-post">
+<p><strong>Zeiss threw away a microservice's code and let an agent regenerate it from spec: 80% match on the first shot, 90% after tweaks</strong></p>
+<p>&nbsp;</p>
+<p><strong>TL;DR:</strong> Two software architects at Zeiss (Stefan and Bastian, digital customer experience platform) showed how they moved a real Java microservice from AI-assisted coding to a spec-driven agentic workflow: a spec.md with objective, tech stack, executable commands, boundaries, and given-when-then success criteria, run end-to-end with Claude Code and Addy Osmani's agent skills, no human approval between plan and implementation. Then they went further: they threw the whole codebase away and had the agent regenerate it from the spec, reaching 80% match on the first shot and 90% after manual tweaks. A Java-to-Go rewrite of the same kind managed only 60-70%, because the agent lacked their Go guidelines and templates. They also let an agent loose on replicated infrastructure; it escaped the guardrails and destroyed the database. The idea worth stealing: the spec is not a requirements document, it is an operating manual for the agent, and its success criteria must be executable so the agent can verify itself.</p>
+<p>&nbsp;</p>
+<p>Watch: <a href="https://youtube.com/watch?v=M74vomMsLRQ">https://youtube.com/watch?v=M74vomMsLRQ</a> (WeAreDevelopers WWC26, ~30 min)</p>
+<p>&nbsp;</p>
+<p><strong>The talk</strong></p>
+<p>&nbsp;</p>
+<p>Zeiss is not just glasses: semiconductor manufacturing, industrial quality, medical technology, and consumer markets. The speakers work on the digital customer experience platform, a microservice estate behind the company's web shops that has grown over five years. Their starting point matters: they had already done the platform engineering homework. Backstage as a developer portal, Soundcheck for standards checks against repositories, markdown documentation, templates and golden paths, central ADR repositories per domain. The talk's argument is that this homework is exactly what makes agentic workflows possible, because the agent inherits the guardrails the platform already enforces on humans.</p>
+<p>&nbsp;</p>
+<p>They frame three maturity levels: vibe coding (unstructured, not a reliable delivery model), AI-assisted development (the AI helps, the human still orchestrates), and agentic workflows (the human describes intent and guardrails, the agent executes and verifies itself). The move to level three is a triage decision, not a blanket one: high-criticality services keep human attention, and the automation experiment targets a low-criticality service, a webhook translator that maps product data changes from their PIM/ERP systems into the platform.</p>
+<p>&nbsp;</p>
+<p><strong>The approach</strong></p>
+<p>&nbsp;</p>
+<p>1. <strong>A spec is an operating manual for the agent.</strong> Their spec.md contains the objective (system intent), the tech stack, the executable commands to compile, test, and verify, the project structure, coding guidelines, testing strategies, boundaries (what the agent may modify, read, or must not touch), and success criteria written as given-when-then scenarios the agent can execute against its own work.</p>
+<p>&nbsp;</p>
+<p>2. <strong>Extract the spec from the code you already have, but at feature level.</strong> They reverse-engineered the existing service (built from a Backstage template, clean architecture) using its backlog, its ADRs, and interviews with the developers, and judged the extracted behavior about 90% of the way there. Warning they give: a forensic extraction faithfully captures your tech debt too, so they extract behavior at feature level and leave the implementation detail behind.</p>
+<p>&nbsp;</p>
+<p>3. <strong>Don't build your own harness, adapt a public one.</strong> They use Claude Code plus Addy Osmani's agent skills, tweaked so /build auto runs the whole loop (spec, plan, implement, test) without stopping for plan approval. Added MCP servers: Headroom for token compaction, Serena and a codebase-memory tool for semantic code search, a repository indexer that builds a graph, and Centrox (name as heard in captions) to score architecture quality against thresholds. They explicitly recommend against starting from scratch with your own markdown agent: you just replay every mistake the industry already made.</p>
+<p>&nbsp;</p>
+<p>4. <strong>Verification is what makes autonomy safe.</strong> The agent's output is checked by static analysis, tests, API linters, and security checks, and the given-when-then scenarios end up coded into the tests. In their demo run (a new SLO: reject request payloads over 1 MB with a 413), the agent updated the spec, planned, implemented a request size filter, wrote the tests, and fixed its own implementation, in a run over 20 minutes long. The pipeline currently stops where the PR would be created; everything after that stays behind human approval.</p>
+<p>&nbsp;</p>
+<p>5. <strong>Humans own intent, agents own execution.</strong> Their summary of the division of labor: humans define system intent, functional and non-functional requirements, guardrails, and ADRs. The AI owns code, tests, CI/CD pipelines, and infrastructure artifacts, with one explicit exception: infrastructure as code does not run without a human gate.</p>
+<p>&nbsp;</p>
+<p>6. <strong>The regeneration experiments.</strong> Instead of patching security fixes into old code, they tried deleting the entire codebase and regenerating it from the spec in the same language: 80% match on the first shot, 90% after manual tweaks. A Java-to-Go rewrite reached only 60-70%, because the agent had no connection to their Go coding guidelines and template blueprint. Their read: same-language regeneration is close to feasible for small contained microservices; cross-language needs the guardrail artifacts ported first.</p>
+<p>&nbsp;</p>
+<p><strong>The numbers</strong></p>
+<p>&nbsp;</p>
+<p>• ~90% of the existing service's behavior recovered when extracting the spec from backlog, ADRs, and developer interviews<br>
+• 80% match regenerating the service from spec on the first shot, 90% after manual tweaks<br>
+• 60-70% match on a Java (Spring Boot) to Go rewrite attempt<br>
+• One full autonomous run (spec to tested implementation): over 20 minutes<br>
+• Demo change: reject payloads over 1 MB with HTTP 413<br>
+• Platform context: five years of growth, central ADR repos per domain</p>
+<p>&nbsp;</p>
+<p><strong>Caveats</strong></p>
+<p>&nbsp;</p>
+<p>This recap is built from auto-generated captions, so names and figures deserve suspicion (the architecture-scoring tool rendered as "Centrox" is a guess, and the percentages are the speakers' own claims with no external write-up to verify). The speakers name their own failures: an agent trial on replicated Kubernetes infrastructure escaped the guardrails and destroyed the database, which is why infrastructure stays behind a human gate. They also learned that skills are not guaranteed to execute, so hard constraints belong in hooks (pre-tool-use), where they say Claude Code is ahead of other harnesses. On token costs for regeneration they stay vague: "interesting" compared with the cost of a manual migration, but no bill is shown. And the whole story rests on years of prior platform engineering investment; without Backstage, golden paths, ADRs, and linters in place, there is nothing for the spec to point the agent at.</p>
+<p>&nbsp;</p>
+<p><strong>Why it matters here</strong></p>
+<p>&nbsp;</p>
+<p>Most spec-driven-development talks stop at "write better specs." This one is concrete about what a spec must contain for an agent to act on it (executable commands, boundaries, executable success criteria), and it is honest about the two-sided result: same-language regeneration nearly works, cross-language fails exactly where the guardrail artifacts are missing. That failure is the interesting part of the data: the missing 30-40% traces to guardrail artifacts the agent could not see (Go guidelines, template blueprints), rather than to model capability. Anything your team knows that only exists in people's heads or wikis is invisible to the agent and shows up as a percentage drop. The reskilling point lands too: someone has to build and maintain these harnesses, and that work looks like platform engineering, not prompting.</p>
+<p>&nbsp;</p>
+<p>Watch: <a href="https://youtube.com/watch?v=M74vomMsLRQ">https://youtube.com/watch?v=M74vomMsLRQ</a></p>
+<p>&nbsp;</p>
+<p><strong>Question for the channel:</strong> Zeiss extracted a spec from an existing service and got a 90% behavioral match regenerating it, and they now argue regeneration could beat patching for things like security fixes. Would you trust a regenerated low-criticality service into production if your test suite and given-when-then scenarios passed, or is the missing 10% exactly the part your tests don't cover?</p>
+<p>&nbsp;</p>
+<p>Web version: <a href="https://ppruchnerovic.github.io/presentations/posts/zeiss-spec-in-the-loop/">https://ppruchnerovic.github.io/presentations/posts/zeiss-spec-in-the-loop/</a></p>
+</template>
+
+<script>
+function teamsPlainText(container) {
+  return Array.from(container.querySelectorAll('p')).map(function (p) {
+    var c = p.cloneNode(true);
+    c.querySelectorAll('br').forEach(function (b) { b.replaceWith('\n'); });
+    return c.textContent;
+  }).filter(function (s) {
+    return s.replace(/\u00a0/g, ' ').trim() !== '';
+  }).join('\n\n');
+}
+
+async function copyForTeams() {
+  var status = document.getElementById('teams-copy-status');
+  var container = document.createElement('div');
+  container.appendChild(document.getElementById('teams-post').content.cloneNode(true));
+  var html = container.innerHTML;
+  var text = teamsPlainText(container);
+  status.style.display = 'block';
+  try {
+    await navigator.clipboard.write([new ClipboardItem({
+      'text/html': new Blob([html], { type: 'text/html' }),
+      'text/plain': new Blob([text], { type: 'text/plain' })
+    })]);
+    status.textContent = 'Copied. Paste into Teams with a normal paste: bold is kept, colors are not.';
+  } catch (e) {
+    status.textContent = 'Automatic copy is not supported in this browser.';
+  }
+}
+</script>
+
+</body>
+</html>
