@@ -16,7 +16,7 @@ duration_min: 10
 recording_url: https://www.youtube.com/watch?v=zHezGRLpPaE
 video_id: zHezGRLpPaE
 session_page: https://app.wearedevelopers.com/events/16/session/682
-transcript: false
+transcript: true
 ---
 
 # Prompt Engineering Your Career: AI Agents for Tech Interview Prep
@@ -45,3 +45,9 @@ In this talk, I’ll show how AI agents can act as a personalized career coach, 
 *Backend Engineer — SoundCloud*
 
 I am a backend engineer at SoundCloud with a passion for solving technical problems and delivering results through fast, incremental progress. I transitioned into tech from social sciences by earning a computer science degree in Germany. My previous background gave me an edge in soft skills and communication, which I believe are often the biggest challenges in software engineering—not technical complexity, but aligning teams and ensuring clear communication. I was fortunate to be mentored by exceptional women and now mentor amazing women, hoping to help pave the way for greater diversity.
+
+## Transcript
+
+*21 words · source: kome (en)*
+
+**[0:00](https://www.youtube.com/watch?v=zHezGRLpPaE&t=0s)** Transcripts aren't available for this video. The publisher may have restricted access for privacy or copyright reasons. Apologies for any inconvenience.

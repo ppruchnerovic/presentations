@@ -16,7 +16,7 @@ duration_min: 30
 recording_url: https://www.youtube.com/watch?v=Jb2eGMAsKuw
 video_id: Jb2eGMAsKuw
 session_page: https://app.wearedevelopers.com/events/16/session/885
-transcript: false
+transcript: true
 ---
 
 # Building the Future of Java: AI Agents, MCP, and Next-Gen App Development
@@ -44,3 +44,9 @@ You will discover a practical, production-ready path for adopting AI both inside
 *Senior Principal Developer Advocate — IBM*
 
 Daniel Oh is a Java Champion and Senior Principal Developer Advocate at IBM, where he leads efforts to advance cloud native innovation through open source technologies. Renowned for his ability to bridge technical and collaborative gaps, he empowers developers and organizations to build transformative solutions from AI-driven applications and serverless architectures to resilient microservices. As a CNCF Ambassador and TAG DevEx co-chair, Daniel actively shapes the cloud native ecosystem, fostering partnerships between enterprise developers, AI engineers, and platform engineering teams to accelerate hybrid cloud adoption. His technical leadership extends beyond code contributions, as he mentors communities and champions strategies that enable businesses to thrive in evolving digital landscapes. A dynamic storyteller and educator, Daniel captivates global audiences through keynote speeches, workshops, and interactive sessions, where he demystifies emerging technologies and inspires the tech community to embrace the future of open source innovation.
+
+## Transcript
+
+*21 words · source: kome (en)*
+
+**[0:00](https://www.youtube.com/watch?v=Jb2eGMAsKuw&t=0s)** Transcripts aren't available for this video. The publisher may have restricted access for privacy or copyright reasons. Apologies for any inconvenience.

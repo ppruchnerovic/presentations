@@ -244,16 +244,19 @@ function fieldHit(set, term) {
 }
 
 function scoreMeta(t, terms, phrase) {
-  let s = 0, matchedAll = true;
+  let s = 0;
+  const matched = new Set();
   for (const term of terms) {
     let hit = 0;
     for (const [field, weight] of Object.entries(W)) hit += fieldHit(t._f[field], term) * weight;
-    if (!hit) matchedAll = false; else s += hit * idf(term);
+    if (hit) { matched.add(term); s += hit * idf(term); }
   }
   if (phrase && t._hay.includes(phrase)) s += 14 * Math.max(1, ...terms.map(idf));
-  return { score: s, matchedAll };
+  return { score: s, matched };
 }
 
+// Returns id -> {score, matched:Set<term>}. The matched set is what lets the
+// caller insist every query term is actually present somewhere in the talk.
 function scoreTranscripts(terms) {
   const out = new Map();
   if (!MANIFEST) return out;
@@ -271,7 +274,10 @@ function scoreTranscripts(terms) {
       for (const [id, tf] of e.p) {
         const dl = len[id] || avg;
         const norm = tf * (k1 + 1) / (tf + k1 * (1 - b + b * dl / avg));
-        out.set(id, (out.get(id) || 0) + e.f * norm * decay);
+        let rec = out.get(id);
+        if (!rec) { rec = { score: 0, matched: new Set() }; out.set(id, rec); }
+        rec.score += e.f * norm * decay;
+        rec.matched.add(term);
       }
     }
   }
@@ -288,11 +294,12 @@ async function search(raw) {
   const hits = [];
   for (const t of TALKS) {
     const m = scoreMeta(t, terms, phrase);
-    const ts = tScores.get(t.i) || 0;
-    // Require every term to land somewhere — in the metadata or the transcript.
-    if (!m.matchedAll && ts === 0) continue;
-    const total = m.score * 1.0 + ts * 2.2;
-    if (total > 0) hits.push({ t, score: total, fromTranscript: ts > 0 && m.score === 0 });
+    const tr = tScores.get(t.i);
+    // Every query term must appear somewhere — in the metadata or in what was
+    // said. Without this, one common word like "ai" pulls in the whole corpus.
+    if (!terms.every(x => m.matched.has(x) || tr?.matched.has(x))) continue;
+    const total = m.score + (tr ? tr.score * 2.2 : 0);
+    if (total > 0) hits.push({ t, score: total, fromTranscript: !!tr && m.score === 0 });
   }
   hits.sort((a, b) => b.score - a.score);
   return { hits, terms, phrase };

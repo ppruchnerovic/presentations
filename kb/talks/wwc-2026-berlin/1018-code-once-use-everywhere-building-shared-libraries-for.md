@@ -16,7 +16,7 @@ duration_min: 30
 recording_url: https://www.youtube.com/watch?v=eM8Y276mSoY
 video_id: eM8Y276mSoY
 session_page: https://app.wearedevelopers.com/events/16/session/1018
-transcript: false
+transcript: true
 ---
 
 # Code Once, Use Everywhere: Building Shared Libraries for Multiple Projects
@@ -57,3 +57,9 @@ Hands-on Architect, IT Trainer, and Conference Speaker with 20+ years of experie
 I've trained over 550 professionals in Architecture, EventStorming, and TDD, built and deployed more than 10 production-ready projects, led multiple development teams, and created a successful Java department from scratch. Along the way, I’ve mentored 20+ developers and conducted 100+ technical interviews.
 
 My expertise lies in Java, but I also have experience with Kotlin, Groovy, and other programming languages. I believe that strong technical skills, continuous learning, teamwork, and knowledge-sharing are the keys to success in software development.
+
+## Transcript
+
+*21 words · source: kome (en)*
+
+**[0:00](https://www.youtube.com/watch?v=eM8Y276mSoY&t=0s)** Transcripts aren't available for this video. The publisher may have restricted access for privacy or copyright reasons. Apologies for any inconvenience.
