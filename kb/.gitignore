@@ -1,0 +1,3 @@
+# Derived index — rebuilt in seconds by tools/build_index.py, and it would
+# otherwise churn several MB of binary into every commit.
+data/talks.db

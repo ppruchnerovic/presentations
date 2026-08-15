@@ -1,0 +1,51 @@
+name: Refresh talk metadata
+
+# Pulls the WeAreDevelopers agenda API and rebuilds the knowledge base whenever
+# the conference changes something (added recordings, retitled talks, new
+# speakers). Transcripts are deliberately NOT fetched here: YouTube blocks
+# GitHub's IP ranges, so `fetch_transcripts.py` has to run on a real machine.
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"   # Mondays, 06:17 UTC
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "kb/tools/**"
+      - ".github/workflows/kb-refresh.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kb-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Sync agenda and rebuild indexes
+        working-directory: kb/tools
+        run: |
+          python3 sync_agenda.py
+          python3 build_index.py
+
+      - name: Commit if anything changed
+        run: |
+          if [ -z "$(git status --porcelain kb)" ]; then
+            echo "No changes."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add kb
+          git commit -m "Refresh talk knowledge base from the WeAreDevelopers API"
+          git push
