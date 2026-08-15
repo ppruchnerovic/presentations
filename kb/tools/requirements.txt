@@ -1,0 +1,3 @@
+# Only fetch_transcripts.py needs a third-party package. sync_agenda.py,
+# build_index.py and query.py run on the standard library alone.
+youtube-transcript-api>=1.0
