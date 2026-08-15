@@ -95,11 +95,19 @@ python3 build_index.py        # rebuild both search indexes
 `sync_agenda.py` and `build_index.py` are idempotent — rerunning gives byte-identical
 output, so a git diff shows exactly what the conference changed.
 
-### Transcripts must be fetched locally
+### Transcripts, and the timing caveat
 
-YouTube blocks datacenter IP ranges. From GitHub Actions or any cloud container
-you get `429` / *"Sign in to confirm you're not a bot"*; from a home connection
-it just works. So:
+`fetch_transcripts.py` tries two routes:
+
+| Route | Timing | Works from |
+|---|---|---|
+| `youtube-transcript-api` | **exact** — deep links land on the second | only un-flagged IPs, in practice a home connection |
+| `kome.ai` | **estimated** — interpolated from word position | anywhere, including CI and cloud containers |
+
+YouTube blocks datacenter IP ranges (`429` / *"Sign in to confirm you're not a
+bot"*), so anything running in the cloud falls back to kome.ai. Estimated starts
+land you *near* a quote — good enough to find the passage, off by roughly a
+sentence or two. Every transcript records which it is in its `timing` field.
 
 ```bash
 pip install youtube-transcript-api
@@ -110,6 +118,10 @@ It is resumable — stop it with Ctrl-C and rerun. Talks whose video has no
 captions are recorded in `data/transcripts/_misses.json` so they are not retried
 forever; `--retry-misses` forces another attempt. Then rerun `sync_agenda.py`
 (to inline transcripts into the markdown) and `build_index.py`, and commit.
+
+**To upgrade estimated timings to exact ones**, delete the transcripts you want
+redone and rerun from a home connection — the script skips talks it already has,
+so it will not re-fetch them otherwise.
 
 The `Refresh talk metadata` workflow keeps the metadata current automatically;
 it deliberately does not attempt transcripts.
