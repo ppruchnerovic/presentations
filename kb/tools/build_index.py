@@ -169,6 +169,9 @@ def build_browser_index(talks: list[dict]) -> dict:
             "m": t["duration_min"],
             "e": t["event_slug"],
             "day": t["day"],
+            # Start time, so the browser can offer a real schedule order. Without
+            # it the UI can only sort by day, which collapses into alphabetical.
+            "st": t["starts_at"],
             "w": words,
         })
         if not text:

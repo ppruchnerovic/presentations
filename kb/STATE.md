@@ -12,7 +12,7 @@ ends and what is left.
 | Per-talk markdown | Done. Regenerated from `talks.json` on every sync. |
 | Search indexes (`build_index.py`) | Done. SQLite FTS5 + sharded browser index. |
 | CLI (`query.py`) | Done. Auto-builds the index on first use. |
-| Browser UI (`index.html`) | Done. Tested headless: search, filters, moments, pagination, shareable URLs, both themes. Ranks on passages, not just whole transcripts. |
+| Browser UI (`index.html`) | Done. Tested headless: search, filters, sorting, foldable abstracts, moments, pagination, shareable URLs, both themes. Ranks on passages, not just whole transcripts. |
 | Claude Code skill | Done — `conference-talks` in the `second-brain` repo. |
 | Transcripts | Fetched via kome.ai with **estimated** timings. See below. |
 | Scheduled refresh | `.github/workflows/kb-refresh.yml`, weekly, metadata only. |

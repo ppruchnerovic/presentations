@@ -61,8 +61,18 @@ three are generated from the same run.
 ### In a browser (anyone, nothing to install)
 
 <https://ppruchnerovic.github.io/presentations/kb/> — type a topic, filter by
-track / type / stage, click **Find this in the talk** to jump to the exact
-seconds where a phrase is spoken.
+track / type / stage, sort by relevance / schedule / title, and click
+**Find this in the talk** to jump to the exact seconds where a phrase is
+spoken. That link only appears once you have searched for something, since
+what it finds are the moments matching your query; clicking it again hides
+them.
+
+Abstracts are shown in full. Anything longer than four lines gets a **Show
+full description** toggle rather than being cut off mid-sentence.
+
+The **Transcript only** filter shows itself only when transcript coverage is
+partial. All 358 talks currently have one, so it stays hidden — a filter that
+matches everything is just a dead control.
 
 Multi-word searches rank talks that say the words *together*, in one passage,
 above talks that merely say each of them somewhere — so "spec driven

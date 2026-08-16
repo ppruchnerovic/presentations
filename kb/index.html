@@ -72,14 +72,22 @@
   .b.track { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
   .b.tag { cursor: pointer; }
   .b.tag:hover { border-color: var(--accent); color: var(--accent); }
-  .abs { font-size: 13.5px; color: var(--muted); margin: 0 0 10px; }
+  .absw { margin: 0 0 10px; }
+  .abs { font-size: 13.5px; color: var(--muted); margin: 0; white-space: pre-wrap; }
+  /* Collapsed to a few lines; the button below only appears when there is
+     actually something hidden, which is measured after render. */
+  .abs.clamped { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4;
+    line-clamp: 4; overflow: hidden; }
+  .abs-more { display: inline-block; margin-top: 5px; padding: 0; border: 0; background: none;
+    font: inherit; font-size: 12.5px; font-weight: 600; color: var(--accent); cursor: pointer; }
+  .abs-more:hover { text-decoration: underline; }
   mark { background: var(--mark); color: var(--mark-text); border-radius: 2px; padding: 0 1px; }
   .links { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; }
   .links a { text-decoration: none; font-weight: 500; }
   .links a:hover { text-decoration: underline; }
 
   .moments { margin-top: 11px; border-top: 1px dashed var(--border); padding-top: 10px; }
-  .moments summary { cursor: pointer; font-size: 12.5px; color: var(--accent); font-weight: 600; }
+  .moments .mo-head { font-size: 12.5px; color: var(--muted); font-weight: 600; }
   .mo { display: flex; gap: 10px; font-size: 13px; margin-top: 9px; align-items: baseline; }
   .mo a.ts { font-variant-numeric: tabular-nums; text-decoration: none; font-weight: 600;
     background: var(--surface-2); padding: 1px 7px; border-radius: 5px; white-space: nowrap; }
@@ -118,7 +126,8 @@
         <option value="sched">Schedule order</option>
         <option value="title">Title A–Z</option>
       </select>
-      <button class="toggle" id="f-tr" type="button" title="Only talks whose transcript has been indexed">Transcript only</button>
+      <button class="toggle" id="f-tr" type="button" hidden
+              title="Only talks whose transcript has been indexed">Transcript only</button>
       <button id="clear" type="button">Reset</button>
     </div>
   </div>
@@ -144,7 +153,19 @@ const el = { q: $('#q'), res: $('#results'), status: $('#status'), sub: $('#sub'
 
 let TALKS = [], BY_ID = new Map(), MANIFEST = null, STOP = new Set(), DF = new Map();
 const SHARDS = new Map();          // letter -> {term: {f: idf, p: [[id, tf]]}}
-let shown = PAGE, lastHits = [], reqSeq = 0;
+const TRANSCRIPTS = new Map();     // id -> parsed transcript, fetched once per talk
+let shown = PAGE, lastHits = [], reqSeq = 0, ALL_TR = false;
+
+// Talks are scheduled in Berlin; the API reports UTC. Formatting through the
+// conference's own zone beats hardcoding an offset that daylight saving moves.
+const HHMM = new Intl.DateTimeFormat('en-GB',
+  { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit', hour12: false });
+function slotOf(t) {
+  if (!t.st) return t.day ? `Day ${t.day}` : '';
+  const d = new Date(t.st);
+  return isNaN(d) ? `Day ${t.day}` : `Day ${t.day} · ${HHMM.format(d)}`;
+}
+const startedAt = t => { const d = t.st ? new Date(t.st) : null; return d && !isNaN(d) ? d.getTime() : Infinity; };
 
 const TOKEN_RE = /[a-z0-9][a-z0-9+#.\-]*/g;
 function tokenize(s) {
@@ -199,6 +220,11 @@ async function boot() {
   const withTr = TALKS.filter(t => t.w > 0).length;
   el.sub.textContent = `${TALKS.length} recorded talks` +
     (withTr ? ` · ${withTr} full transcripts searchable` : ' · transcripts not indexed yet');
+  // "Transcript only" and the per-card "transcript" badge only say something
+  // when the coverage is partial. Every talk currently has one, so both stay
+  // hidden until a refresh brings in a talk whose captions could not be fetched.
+  ALL_TR = withTr === TALKS.length;
+  $('#f-tr').hidden = ALL_TR;
   fillFilters();
   readHash();
   run();
@@ -361,43 +387,54 @@ function highlight(text, terms) {
   return out.replace(new RegExp(`\\b(${uniq.join('|')})`, 'gi'), '<mark>$1</mark>');
 }
 
-function excerpt(text, terms, len = 260) {
-  if (!text) return '';
-  const low = text.toLowerCase();
-  let at = -1;
-  for (const t of terms) { const i = low.indexOf(t); if (i > -1 && (at < 0 || i < at)) at = i; }
-  if (at < 0 || at < len * 0.6) return text.slice(0, len) + (text.length > len ? '…' : '');
-  const start = Math.max(0, at - 70);
-  return '…' + text.slice(start, start + len) + (start + len < text.length ? '…' : '');
-}
-
 function card(hit, terms) {
   const t = hit.t;
   const who = (t.s || []).length
     ? esc(t.s.join(', ')) + ((t.c || []).length ? ` <span class="co">· ${esc(t.c.join(', '))}</span>` : '')
     : '<span class="co">No speaker listed</span>';
   const yt = `https://www.youtube.com/watch?v=${t.u}`;
+  const slot = slotOf(t);
   const badges = [
     t.k ? `<span class="b track">${esc(t.k)}</span>` : '',
     t.y ? `<span class="b">${esc(t.y)}</span>` : '',
     t.g ? `<span class="b">${esc(t.g)}</span>` : '',
+    slot ? `<span class="b">${esc(slot)}</span>` : '',
     t.m ? `<span class="b">${t.m} min</span>` : '',
-    t.w ? `<span class="b">transcript</span>` : '',
+    t.w && !ALL_TR ? `<span class="b">transcript</span>` : '',
     ...(t.a || []).map(x => `<span class="b tag" data-tag="${esc(x)}">#${esc(x)}</span>`)
   ].join('');
+
+  // The whole abstract, clamped to a few lines. Whether that clamp actually
+  // hides anything depends on the rendered height, so the toggle stays hidden
+  // until markOverflow() has measured this card.
+  const abs = (t.d || '').trim()
+    ? `<div class="absw">
+         <p class="abs clamped">${highlight(t.d, terms)}</p>
+         <button class="abs-more" type="button" hidden>Show full description</button>
+       </div>`
+    : '';
 
   return `<article class="card" data-id="${t.i}">
     <h2><a href="${yt}" target="_blank" rel="noopener">${highlight(t.t, terms)}</a></h2>
     <div class="who">${who}</div>
     <div class="badges">${badges}</div>
-    <p class="abs">${highlight(excerpt(t.d, terms), terms)}</p>
+    ${abs}
     <div class="links">
       <a href="${yt}" target="_blank" rel="noopener">▶ Watch recording</a>
       <a href="${esc(t.p)}" target="_blank" rel="noopener">Session page</a>
-      ${t.w ? `<a href="#" class="mo-load" data-id="${t.i}">Find this in the talk</a>` : ''}
+      ${t.w && terms.length ? `<a href="#" class="mo-load" data-id="${t.i}">Find this in the talk</a>` : ''}
     </div>
     <div class="mo-slot"></div>
   </article>`;
+}
+
+// A clamped paragraph that overflows its four lines is the only one that needs
+// an unfold control.
+function markOverflow() {
+  for (const p of el.res.querySelectorAll('.abs.clamped')) {
+    const btn = p.nextElementSibling;
+    if (btn) btn.hidden = p.scrollHeight <= p.clientHeight + 2;
+  }
 }
 
 let currentResult = null;
@@ -408,21 +445,29 @@ function render(result) {
   let hits = result ? result.hits.slice() : TALKS.map(t => ({ t, score: 0 }));
 
   const fk = $('#f-track').value, fy = $('#f-type').value, fg = $('#f-stage').value;
-  const trOnly = $('#f-tr').classList.contains('on');
+  const trOnly = !$('#f-tr').hidden && $('#f-tr').classList.contains('on');
   hits = hits.filter(h => (!fk || h.t.k === fk) && (!fy || h.t.y === fy) &&
                           (!fg || h.t.g === fg) && (!trOnly || h.t.w > 0));
 
+  const byTitle = (a, b) => a.t.t.localeCompare(b.t.t);
+  const bySchedule = (a, b) => (startedAt(a.t) - startedAt(b.t)) || byTitle(a, b);
+  // Relevance only exists once something has been searched for; browsing the
+  // whole catalogue falls back to schedule order, and the status line says so
+  // rather than leaving the picker looking broken.
   const sort = $('#f-sort').value;
-  if (sort === 'title') hits.sort((a, b) => a.t.t.localeCompare(b.t.t));
-  else if (sort === 'sched') hits.sort((a, b) => (a.t.day - b.t.day) || a.t.t.localeCompare(b.t.t));
-  else if (!result) hits.sort((a, b) => (a.t.day - b.t.day) || a.t.t.localeCompare(b.t.t));
+  const effective = sort === 'rel' && !result ? 'sched' : sort;
+  if (effective === 'title') hits.sort(byTitle);
+  else if (effective === 'sched') hits.sort(bySchedule);
 
   lastHits = hits;
   const nTr = hits.filter(h => h.fromTranscript).length;
+  const orderNote = sort === 'rel' && !result
+    ? ' <span>· ordered by schedule — search to rank by relevance</span>' : '';
   el.status.innerHTML = hits.length
     ? `<b>${hits.length}</b> talk${hits.length === 1 ? '' : 's'}` +
       (result ? ` matching <b>${esc(el.q.value.trim())}</b>` : '') +
-      (nTr ? ` <span>· ${nTr} found only in the spoken transcript</span>` : '')
+      (nTr ? ` <span>· ${nTr} found only in the spoken transcript</span>` : '') +
+      orderNote
     : '';
 
   if (!hits.length) {
@@ -432,6 +477,7 @@ function render(result) {
     return;
   }
   el.res.innerHTML = hits.slice(0, shown).map(h => card(h, terms)).join('');
+  markOverflow();
   el.more.hidden = hits.length <= shown;
   el.more.textContent = `Show more (${hits.length - shown} left)`;
 }
@@ -439,9 +485,19 @@ function render(result) {
 // ---------- transcript moments, fetched per talk on demand ----------
 async function showMoments(id, slot, terms) {
   slot.innerHTML = '<div class="moments"><span class="spinner"></span></div>';
-  let tr;
-  try { tr = await fetch(`data/transcripts/${id}.json`).then(r => r.json()); }
-  catch (_) { slot.innerHTML = '<div class="moments"><small>Transcript unavailable.</small></div>'; return; }
+  let tr = TRANSCRIPTS.get(id);
+  if (!tr) {
+    try {
+      tr = await fetch(`data/transcripts/${id}.json`).then(r => {
+        if (!r.ok) throw new Error(r.status);
+        return r.json();
+      });
+      TRANSCRIPTS.set(id, tr);
+    } catch (_) {
+      slot.innerHTML = '<div class="moments"><small>Transcript unavailable.</small></div>';
+      return;
+    }
+  }
 
   const segs = tr.segments || [];
   const scored = [];
@@ -467,7 +523,7 @@ async function showMoments(id, slot, terms) {
   picked.sort((a, b) => a.start - b.start);
 
   const vid = BY_ID.get(id).u;
-  slot.innerHTML = `<div class="moments"><summary style="list-style:none">Moments in the talk</summary>` +
+  slot.innerHTML = `<div class="moments"><div class="mo-head">Moments in the talk</div>` +
     picked.map(s => {
       const ctx = segs.slice(Math.max(0, s.i - 1), s.i + 2).map(x => x.text).join(' ');
       const mm = Math.floor(s.start / 60), ss = String(Math.floor(s.start % 60)).padStart(2, '0');
@@ -501,17 +557,42 @@ $('#clear').addEventListener('click', () => {
 });
 el.more.addEventListener('click', () => { shown += PAGE; render(currentResult); });
 
+// A narrower window rewraps the abstracts, so what fits in four lines changes.
+let rzTimer;
+window.addEventListener('resize', () => { clearTimeout(rzTimer); rzTimer = setTimeout(markOverflow, 150); });
+
 el.res.addEventListener('click', async e => {
   const tag = e.target.closest('.tag');
   if (tag) { el.q.value = tag.dataset.tag; shown = PAGE; run(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+
+  const more = e.target.closest('.abs-more');
+  if (more) {
+    const p = more.previousElementSibling;
+    const clamped = p.classList.toggle('clamped');
+    more.textContent = clamped ? 'Show full description' : 'Show less';
+    return;
+  }
+
   const mo = e.target.closest('.mo-load');
   if (mo) {
     e.preventDefault();
     const card = mo.closest('.card');
+    const slot = card.querySelector('.mo-slot');
     const terms = currentResult ? currentResult.terms : [];
-    if (!terms.length) { mo.textContent = 'Type something to search for first'; return; }
-    mo.remove();
-    showMoments(Number(card.dataset.id), card.querySelector('.mo-slot'), terms);
+    if (!terms.length) return;              // the link is not rendered without a query
+    // Second click hides what the first one loaded, rather than leaving the
+    // card stuck open with no way back.
+    if (slot.dataset.state) {
+      const open = slot.dataset.state === 'open';
+      slot.hidden = open;
+      slot.dataset.state = open ? 'closed' : 'open';
+      mo.textContent = open ? 'Find this in the talk' : 'Hide moments';
+      return;
+    }
+    slot.dataset.state = 'open';
+    slot.hidden = false;
+    mo.textContent = 'Hide moments';
+    showMoments(Number(card.dataset.id), slot, terms);
   }
 });
 
@@ -526,6 +607,7 @@ function writeHash() {
     const [k, id] = pair.split(':'); if ($('#' + id).value) p.set(k, $('#' + id).value);
   });
   if ($('#f-tr').classList.contains('on')) p.set('tr', '1');
+  if ($('#f-sort').value !== 'rel') p.set('sort', $('#f-sort').value);
   const s = p.toString();
   history.replaceState(null, '', s ? '#' + s : location.pathname);
 }
@@ -535,7 +617,8 @@ function readHash() {
   if (p.get('track')) $('#f-track').value = p.get('track');
   if (p.get('type')) $('#f-type').value = p.get('type');
   if (p.get('stage')) $('#f-stage').value = p.get('stage');
-  if (p.get('tr')) $('#f-tr').classList.add('on');
+  if (['rel', 'sched', 'title'].includes(p.get('sort'))) $('#f-sort').value = p.get('sort');
+  if (p.get('tr') && !$('#f-tr').hidden) $('#f-tr').classList.add('on');
 }
 
 boot().catch(err => {
