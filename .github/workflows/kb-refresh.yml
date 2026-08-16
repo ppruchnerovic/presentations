@@ -39,9 +39,11 @@ jobs:
           python3 build_index.py
 
       - name: Commit if anything changed
+        id: commit
         run: |
           if [ -z "$(git status --porcelain kb)" ]; then
             echo "No changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git config user.name  "github-actions[bot]"
@@ -49,3 +51,17 @@ jobs:
           git add kb
           git commit -m "Refresh talk knowledge base from the WeAreDevelopers API"
           git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      # The push above does NOT start `Deploy GitHub Pages`: GitHub suppresses
+      # workflow triggers from pushes made with the default GITHUB_TOKEN, to
+      # avoid recursive runs. So a refresh used to land in main and then sit
+      # there unpublished until somebody happened to push for another reason —
+      # up to a week of the live search serving stale data.
+      #
+      # Mirror to gh-pages here instead, which is all pages.yml does anyway.
+      # Updating gh-pages *does* publish, because GitHub's built-in Pages build
+      # is not a repository workflow and is not subject to that suppression.
+      - name: Publish the refreshed data
+        if: steps.commit.outputs.changed == 'true'
+        run: git push origin HEAD:gh-pages --force

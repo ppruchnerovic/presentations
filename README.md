@@ -10,8 +10,8 @@ Both are published via GitHub Pages.
 GitHub Pages serves the `gh-pages` branch. On every push to `main`, the
 `Deploy GitHub Pages` workflow (`.github/workflows/pages.yml`) mirrors `main`
 into `gh-pages`, so the site redeploys automatically — never edit `gh-pages`
-directly. The one exception is the weekly knowledge base refresh, which commits
-to `main` without redeploying; see below.
+directly — the one workflow that does is the weekly knowledge base refresh, for
+the reason described below.
 
 ## Structure
 
@@ -51,15 +51,15 @@ before changing anything in `kb/tools/`.
 
 The `Refresh talk metadata` workflow (`.github/workflows/kb-refresh.yml`) pulls
 the conference API every Monday at 06:17 UTC, rebuilds the search indexes, and
-commits to `main` if the conference changed anything.
+commits to `main` if the conference changed anything, then mirrors to
+`gh-pages` itself so the live search updates the same minute.
 
-**That commit does not redeploy the site.** It is pushed with the default
-`GITHUB_TOKEN`, and GitHub deliberately suppresses workflow triggers from such
-pushes to avoid loops — so `Deploy GitHub Pages` does not fire and the live
-search keeps serving the previous data until the next ordinary push to `main`.
-Refreshed metadata can therefore sit in `main` unpublished for up to a week. To
-publish it immediately, run the `Deploy GitHub Pages` workflow by hand from the
-Actions tab.
+That last step looks redundant next to `Deploy GitHub Pages` and is not: a push
+made with the default `GITHUB_TOKEN` does not start another workflow, because
+GitHub suppresses those triggers to avoid recursive runs. Before the refresh
+mirrored to `gh-pages` on its own, new data landed in `main` and then sat there
+unpublished until someone happened to push for an unrelated reason. Keep the
+mirror step when editing that workflow.
 
 Two things the refresh deliberately does **not** do:
 
