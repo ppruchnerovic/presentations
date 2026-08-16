@@ -5,110 +5,162 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WeAreDevelopers Talk Explorer</title>
 <meta name="description" content="Search every recorded talk from the WeAreDevelopers World Congress — by topic, track, speaker or what was actually said on stage.">
+<meta name="color-scheme" content="dark">
 <style>
+  /* Same design tokens as the recap pages and the site index — one palette
+     across presentations and the explorer. */
   :root {
-    --bg: #ffffff; --surface: #f6f7f9; --surface-2: #eceff3; --border: #dde1e7;
-    --text: #14181f; --muted: #5c6673; --accent: #1a56db; --accent-soft: #e8effd;
-    --mark: #fde68a; --mark-text: #3f2d00; --shadow: 0 1px 2px rgba(16,24,40,.06), 0 4px 12px rgba(16,24,40,.05);
-    --radius: 10px;
+    --bg: #0f1115;
+    --card: #181b22;
+    --accent: #e8b64c;
+    --text: #e6e6e6;
+    --muted: #9aa3b2;
+    --border: #262b36;
+    --chip: #20242d;
+    --accent-soft: rgba(232,182,76,0.12);
+    --accent-line: rgba(232,182,76,0.35);
+    --accent-hover: rgba(232,182,76,0.5);
+    --radius: 12px;
   }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme=light]) {
-      --bg: #0e1117; --surface: #161b22; --surface-2: #1e242d; --border: #2c333d;
-      --text: #e6edf3; --muted: #97a3b1; --accent: #6ea8ff; --accent-soft: #16233c;
-      --mark: #7a5d00; --mark-text: #ffe9a8;
-      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 12px rgba(0,0,0,.3);
-    }
-  }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
   html { -webkit-text-size-adjust: 100%; }
   body {
-    margin: 0; background: var(--bg); color: var(--text);
-    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0 0 60px;
   }
   a { color: var(--accent); }
-  .wrap { max-width: 980px; margin: 0 auto; padding: 0 18px 72px; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 20px; }
 
-  header { border-bottom: 1px solid var(--border); background: var(--surface); }
-  .head-in { max-width: 980px; margin: 0 auto; padding: 22px 18px 18px; }
-  h1 { margin: 0 0 4px; font-size: 21px; letter-spacing: -.01em; }
-  .sub { margin: 0 0 16px; color: var(--muted); font-size: 13.5px; }
+  header {
+    background: linear-gradient(135deg, #14161c 0%, #1d2027 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 40px 24px 30px;
+    text-align: center;
+  }
+  .head-in { max-width: 860px; margin: 0 auto; }
+  .kicker {
+    display: inline-block;
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .kicker a { text-decoration: none; }
+  .kicker a:hover { text-decoration: underline; }
+  h1 { font-size: 1.9rem; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .sub { color: var(--muted); font-size: 0.95rem; max-width: 640px; margin: 0 auto 22px; }
 
-  .searchbar { position: relative; }
+  .searchbar { position: relative; max-width: 640px; margin: 0 auto; text-align: left; }
   #q {
-    width: 100%; padding: 13px 15px 13px 42px; font-size: 16px; color: var(--text);
-    background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
-    box-shadow: var(--shadow); font-family: inherit;
+    width: 100%; padding: 13px 18px 13px 44px; font-size: 1rem; font-family: inherit;
+    color: var(--text); background: var(--card);
+    border: 1px solid var(--border); border-radius: 999px;
   }
-  #q:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
-  .searchbar svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  #q::placeholder { color: var(--muted); }
+  #q:focus {
+    outline: none; border-color: var(--accent-line);
+    box-shadow: 0 0 0 3px rgba(232,182,76,0.13);
+  }
+  .searchbar svg { position: absolute; left: 17px; top: 50%; transform: translateY(-50%);
     width: 17px; height: 17px; fill: none; stroke: var(--muted); stroke-width: 2; }
-  .hint { margin-top: 7px; font-size: 12.5px; color: var(--muted); }
-  .hint code { background: var(--surface-2); padding: 1px 5px; border-radius: 4px; font-size: 11.5px; }
+  .hint { margin: 10px auto 0; max-width: 640px; font-size: 0.8rem; color: var(--muted); }
+  .hint code { background: rgba(255,255,255,0.06); color: var(--accent);
+    padding: 2px 7px; border-radius: 999px; font-size: 0.75rem; }
 
-  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; align-items: center; }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px;
+    align-items: center; justify-content: center; }
   select, .toggle {
-    font: inherit; font-size: 13px; padding: 7px 10px; color: var(--text);
-    background: var(--bg); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+    font: inherit; font-size: 0.82rem; padding: 7px 14px; color: var(--text);
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 999px; cursor: pointer;
   }
-  .toggle.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
-  #clear { margin-left: auto; background: none; border: 0; color: var(--muted);
-    font: inherit; font-size: 13px; cursor: pointer; text-decoration: underline; }
+  select:hover, .toggle:hover { border-color: var(--accent-hover); }
+  .toggle.on { background: var(--accent-soft); border-color: var(--accent-line);
+    color: var(--accent); font-weight: 600; }
+  #clear { background: none; border: 0; color: var(--muted);
+    font: inherit; font-size: 0.82rem; cursor: pointer; text-decoration: underline; padding: 7px 4px; }
+  #clear:hover { color: var(--accent); }
 
-  .status { padding: 18px 0 10px; color: var(--muted); font-size: 13.5px;
-    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-  .status b { color: var(--text); }
+  /* Deliberately not uppercased like the recap meta lines: this one echoes back
+     what the visitor typed, and their query is not ours to restyle. */
+  .status { padding: 26px 0 14px; color: var(--muted); font-size: 0.85rem;
+    display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .status b { color: var(--accent); font-weight: 700; }
 
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 15px 17px; margin-bottom: 11px; box-shadow: var(--shadow); }
-  .card h2 { margin: 0 0 5px; font-size: 16.5px; line-height: 1.35; letter-spacing: -.005em; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px 22px; margin-bottom: 14px;
+    transition: border-color 0.15s ease;
+  }
+  .card:hover { border-color: var(--accent-hover); }
+  .card h2 { font-size: 1.15rem; font-weight: 600; line-height: 1.4;
+    letter-spacing: -0.01em; margin-bottom: 6px; }
   .card h2 a { color: var(--text); text-decoration: none; }
-  .card h2 a:hover { color: var(--accent); text-decoration: underline; }
-  .who { font-size: 13.5px; color: var(--text); margin-bottom: 8px; }
+  .card h2 a:hover { color: var(--accent); }
+  .who { font-size: 0.88rem; color: var(--text); margin-bottom: 10px; }
   .who .co { color: var(--muted); }
-  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 9px; }
-  .b { font-size: 11.5px; padding: 2.5px 8px; border-radius: 20px; background: var(--surface-2);
-    color: var(--muted); white-space: nowrap; border: 1px solid transparent; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 11px; }
+  .b { font-size: 0.72rem; padding: 3px 11px; border-radius: 999px; background: var(--chip);
+    color: var(--muted); white-space: nowrap; border: 1px solid transparent; line-height: 1.5; }
   .b.track { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
   .b.tag { cursor: pointer; }
-  .b.tag:hover { border-color: var(--accent); color: var(--accent); }
-  .absw { margin: 0 0 10px; }
-  .abs { font-size: 13.5px; color: var(--muted); margin: 0; white-space: pre-wrap; }
+  .b.tag:hover { border-color: var(--accent-line); color: var(--accent); }
+  .absw { margin-bottom: 13px; }
+  .abs { font-size: 0.9rem; color: var(--muted); white-space: pre-wrap; }
   /* Collapsed to a few lines; the button below only appears when there is
      actually something hidden, which is measured after render. */
   .abs.clamped { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4;
     line-clamp: 4; overflow: hidden; }
-  .abs-more { display: inline-block; margin-top: 5px; padding: 0; border: 0; background: none;
-    font: inherit; font-size: 12.5px; font-weight: 600; color: var(--accent); cursor: pointer; }
+  .abs-more { display: inline-block; margin-top: 7px; border: 0; background: none;
+    font: inherit; font-size: 0.8rem; font-weight: 600; color: var(--accent); cursor: pointer; }
   .abs-more:hover { text-decoration: underline; }
-  mark { background: var(--mark); color: var(--mark-text); border-radius: 2px; padding: 0 1px; }
-  .links { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; }
-  .links a { text-decoration: none; font-weight: 500; }
+  mark { background: rgba(232,182,76,0.24); color: #ffeaba;
+    border-radius: 3px; padding: 0 2px; }
+  .links { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.85rem; }
+  .links a { text-decoration: none; font-weight: 600; }
   .links a:hover { text-decoration: underline; }
 
-  .moments { margin-top: 11px; border-top: 1px dashed var(--border); padding-top: 10px; }
-  .moments .mo-head { font-size: 12.5px; color: var(--muted); font-weight: 600; }
-  .mo { display: flex; gap: 10px; font-size: 13px; margin-top: 9px; align-items: baseline; }
-  .mo a.ts { font-variant-numeric: tabular-nums; text-decoration: none; font-weight: 600;
-    background: var(--surface-2); padding: 1px 7px; border-radius: 5px; white-space: nowrap; }
+  .moments { margin-top: 15px; border-top: 1px solid var(--border); padding-top: 14px; }
+  .moments .mo-head { font-size: 0.72rem; color: var(--accent); font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase; }
+  .mo { display: flex; gap: 12px; font-size: 0.88rem; margin-top: 11px; align-items: baseline; }
+  .mo a.ts {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 1px 12px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent);
+    font-weight: 700; font-size: 0.8rem; font-variant-numeric: tabular-nums;
+    text-decoration: none; white-space: nowrap; flex-shrink: 0;
+  }
+  .mo a.ts:hover { background: rgba(232,182,76,0.22); }
   .mo span { color: var(--muted); }
 
-  .empty { text-align: center; padding: 54px 20px; color: var(--muted); }
-  .empty h3 { color: var(--text); margin: 0 0 8px; font-size: 16px; }
+  .empty { text-align: center; padding: 54px 20px; color: var(--muted);
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); }
+  .empty h3 { color: var(--text); margin-bottom: 8px; font-size: 1.05rem; }
   .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--border);
     border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  #more { display: block; margin: 18px auto 0; padding: 10px 22px; font: inherit; font-size: 14px;
-    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-    color: var(--text); cursor: pointer; }
-  #more:hover { border-color: var(--accent); color: var(--accent); }
-  footer { text-align: center; color: var(--muted); font-size: 12.5px; padding: 30px 18px; }
+  #more {
+    display: block; margin: 22px auto 0; padding: 10px 24px;
+    font: inherit; font-size: 0.9rem; font-weight: 700;
+    background: none; border: 1px solid var(--accent-line); border-radius: 999px;
+    color: var(--accent); cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
+  }
+  #more:hover { background: var(--accent); color: #14161c; }
+  footer { max-width: 860px; margin: 48px auto 0; padding: 0 20px;
+    color: var(--muted); font-size: 0.8rem; text-align: center; }
 </style>
 </head>
 <body>
 <header>
   <div class="head-in">
-    <h1>WeAreDevelopers Talk Explorer</h1>
+    <span class="kicker"><a href="../">AI Dev Community</a> · Talk Explorer</span>
+    <h1>Search every recorded talk</h1>
     <p class="sub" id="sub">Loading the catalogue…</p>
     <div class="searchbar">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
