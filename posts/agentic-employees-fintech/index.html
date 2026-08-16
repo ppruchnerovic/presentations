@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A regulated bank runs an "AI employee" for ~47 teams on 100 bucks a month of infra</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #181b22;
+    --accent: #e8b64c;
+    --text: #e6e6e6;
+    --muted: #9aa3b2;
+    --border: #262b36;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0 0 60px;
+  }
+  header {
+    background: linear-gradient(135deg, #14161c 0%, #1d2027 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  header .kicker {
+    display: inline-block;
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  header h1 {
+    font-size: 1.9rem;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  header .sub {
+    color: var(--muted);
+    font-size: 0.95rem;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  header .sub a { color: var(--accent); text-decoration: none; }
+  .note {
+    max-width: 860px;
+    margin: 20px auto 0;
+    padding: 12px 18px;
+    background: rgba(232,182,76,0.08);
+    border: 1px solid rgba(232,182,76,0.25);
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-align: left;
+  }
+  main { max-width: 860px; margin: 0 auto; padding: 0 20px; }
+  section h2 {
+    font-size: 1.15rem;
+    color: var(--accent);
+    margin: 44px 0 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .intro-card, .takeaway {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 12px;
+  }
+  .intro-card p, .takeaway p { color: var(--muted); font-size: 0.92rem; }
+  .intro-card p.lead { color: var(--text); font-size: 1rem; }
+  .intro-card p + p { margin-top: 10px; }
+  .takeaway .head {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .takeaway .ts {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    height: 30px;
+    border-radius: 999px;
+    background: rgba(232,182,76,0.12);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+  .takeaway h3 { font-size: 1.02rem; font-weight: 600; }
+  .numbers-card ul {
+    list-style: none;
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+  .numbers-card ul li {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .numbers-card ul li:last-child { border-bottom: none; }
+  .numbers-card ul li strong { color: var(--text); font-variant-numeric: tabular-nums; }
+  .cta-card {
+    background: var(--card);
+    border: 1px solid rgba(232,182,76,0.35);
+    border-radius: 12px;
+    padding: 22px 20px;
+    margin-top: 8px;
+    text-align: center;
+  }
+  .cta-card a.button {
+    display: inline-block;
+    background: var(--accent);
+    color: #14161c;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 10px 22px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .cta-card p { color: var(--muted); font-size: 0.9rem; }
+  footer {
+    max-width: 860px;
+    margin: 48px auto 0;
+    padding: 0 20px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<header>
+  <span class="kicker">AI Dev Community · Video recap</span>
+  <h1>A regulated bank runs an "AI employee" for ~47 teams on 100 bucks a month of infra: old laptops, deterministic code first, LLMs last</h1>
+  <div class="sub">WeAreDevelopers WWC26 · ~30 min incl. Q&amp;A · <a href="https://youtube.com/watch?v=4okkSoARikg">Watch on YouTube</a></div>
+  <div class="note"><strong>Note:</strong> Saša Fajković, AI and DevEx Lead at Trade Republic, on the internal "AI employee" he built for the bank. This recap is based on cleaned auto-generated captions, so treat exact numbers with care; all figures are the speaker's own.</div>
+</header>
+<main>
+
+<section>
+<h2>The short version</h2>
+<div class="intro-card">
+<p class="lead">Trade Republic (10M+ customers, 18 countries, a fully licensed bank) runs an internal "AI employee" that serves around 47 teams, handles over 10,000 sessions a week, and in some team channels solves over 90% of incoming requests on its own. The infrastructure bill is about 100 bucks a month, because it runs on repurposed company laptops.</p>
+<p>The design inverts the usual agent stack: routing, permissions, and confidence checks are plain deterministic code, and an LLM is only invoked when code can't classify the problem. The idea worth stealing: put the guardrails and the decision-making outside the model, in code the model can't override, and let people improve the agent with a one-click feedback loop that turns into reviewable PRs.</p>
+</div>
+</section>
+
+<section>
+<h2>Key takeaways</h2>
+
+<div class="takeaway"><div class="head"><span class="ts">1</span><h3>Deterministic first, LLM last</h3></div>
+<p>When a Slack message arrives, pure code decides what the problem is and what to do about it. The routing layer spends zero tokens and often decides in under a millisecond. Only when code can't figure out what the problem is about does the system invoke an LLM.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">2</span><h3>Three confidence gates, configured per channel</h3></div>
+<p>Each channel gets a 0-100 confidence scale with two thresholds. Below the first (say 50): stay quiet, don't spam people. Between them (50-80): propose a solution and tag humans for approval. Above the second (80+): investigate first, then act autonomously. It never auto-merges, because a bank can't have that.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">3</span><h3>Permissions in code, not in prompts</h3></div>
+<p>He calls the "please don't expose secrets" markdown-file approach hope, not control. Over 30 categories of security hooks fire deterministically around every task, CLI call, or curl command; some native CLI tools are banned in favor of custom wrappers. The system knows who is asking, so a finance document shared with the agent can't be leaked to someone outside finance just by asking nicely.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">4</span><h3>Compile-time knowledge, not runtime lookup</h3></div>
+<p>Skills, routes, sub-agents, and configs are markdown and YAML artifacts defined at org, domain, or team level and compiled into each team's agent, with team IDs, projects, and channels baked in so the LLM never wastes a lookup. Teams can override org artifacts, with one exception: hooks. A team cannot override a company rule.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">5</span><h3>Feedback becomes PRs</h3></div>
+<p>Anyone can type a thumbs-up or thumbs-down message in the thread. The system analyzes the thread against its knowledge and comes back with "I improved myself, want to merge the change?" Teams merged over 500 of these self-improvement PRs within a few months. It never self-improves without a human merging.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">6</span><h3>It also shows up uninvited</h3></div>
+<p>Scheduled jobs run as pure code, full agentic, or a hybrid that checks state in code for free before spending tokens; a guided mini framework lets compliance, finance, and legal people write these jobs themselves. A knowledge-graph workflow ingests a team's Confluence and a year of conversations, and a weekly data pass finds blind spots and files knowledge PRs to fix them.</p></div>
+
+</section>
+
+<section>
+<h2>The numbers</h2>
+<div class="intro-card numbers-card">
+<ul>
+<li><strong>~47 teams</strong> served, ~150 Slack channels, running 24/7</li>
+<li><strong>10,000+</strong> sessions per week, roughly 50,000 problem sessions per month</li>
+<li><strong>60</strong> parallel sessions at peak, within a single domain</li>
+<li><strong>90%+</strong> of incoming requests solved autonomously in some team channels</li>
+<li><strong>500+</strong> self-improvement PRs merged within a few months</li>
+<li><strong>30+</strong> categories of deterministic security hooks</li>
+<li><strong>15</strong> dashboards, 250+ technical panels, per-route and per-trigger cost tracking</li>
+<li><strong>~100 bucks/month</strong> infrastructure cost, on repurposed company laptops</li>
+</ul>
+</div>
+</section>
+
+<section>
+<h2>Caveats</h2>
+<div class="intro-card">
+<p>All numbers are the speaker's own, with no external write-up to check against. The 100-bucks figure is explicitly infrastructure only: LLM token costs sit on top, and the talk doesn't give that bill (the deterministic-first design exists partly to keep it down). The system is an internal tool, not a product, though he says the engine is generic and previews what's next: shared context across Slack, Meet, Jira, and GitHub in one session, plus harness- and LLM-agnosticism (Claude Code, Codex, OpenCode, Cursor CLI, Bedrock, GCP, or bare metal) behind a one-line config change. On "does this replace engineers" he's direct: the point is not cutting headcount, it's removing the two-day dependency-upgrade kind of work nobody enjoys.</p>
+</div>
+</section>
+
+<section>
+<h2>Why it matters for Teams AI builders</h2>
+<div class="intro-card">
+<p>Most agent setups this community runs put the LLM in charge and bolt guardrails on afterwards. This talk describes the opposite architecture, in production, at a bank: code decides, the LLM executes, and policy lives in hooks the model cannot override (he name-checks Anthropic's Claude Tag as a step in the right direction that is still nowhere near this). The compile-time injection trick is immediately usable: anything you know statically about a team or project belongs in the prompt artifact at build time, not in a tool call at runtime. Same for the feedback loop: a reaction in a thread that becomes a reviewable PR against the agent's knowledge is a pattern any of us could wire up with the tools we already use.</p>
+</div>
+</section>
+
+<section>
+<h2>Join the discussion</h2>
+<div class="cta-card">
+<a class="button" href="https://youtube.com/watch?v=4okkSoARikg">▶ Watch the full video</a>
+<p>Which decisions are you currently asking an LLM to make that ordinary code could make instead? In this talk, a simple score of how well an incoming request matches something the agent already knows decides whether it acts, asks a human, or stays quiet. And on the feedback loop: Trade Republic's agent improves by opening PRs against its own knowledge base whenever someone leaves feedback, and teams merged 500+ of them in a few months. Be honest about your own team: would you review those PRs properly, ignore them, or rubber-stamp them without reading?</p>
+</div>
+</section>
+
+</main>
+<footer>Source: WeAreDevelopers, "WWC26 - Agentic employees in world's most downloaded FinTech app" (https://youtube.com/watch?v=4okkSoARikg)<br>
+Web version: <a href="https://ppruchnerovic.github.io/presentations/posts/agentic-employees-fintech/" style="color: var(--accent); text-decoration: none;">https://ppruchnerovic.github.io/presentations/posts/agentic-employees-fintech/</a></footer>
+
+<style>
+  .teams-copy {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 10;
+    text-align: right;
+  }
+  .teams-copy button {
+    font: inherit;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 12px 20px;
+    border-radius: 999px;
+    border: none;
+    background: var(--accent);
+    color: #14161c;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .teams-copy .status {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--text);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    max-width: 260px;
+    display: none;
+  }
+</style>
+
+<div class="teams-copy">
+  <button type="button" onclick="copyForTeams()">Copy for Teams</button>
+  <div class="status" id="teams-copy-status"></div>
+</div>
+
+<template id="teams-post">
+<p><strong>A regulated bank runs an "AI employee" for ~47 teams on 100 bucks a month of infra: old laptops, deterministic code first, LLMs last</strong></p>
+<p>&nbsp;</p>
+<p><strong>TL;DR:</strong> Saša Fajković, AI and DevEx Lead at Trade Republic (10M+ customers, 18 countries, fully licensed bank), built an internal "AI employee" that now serves around 47 teams, runs over 10,000 sessions a week, and solves over 90% of incoming support requests on its own in some teams. The infrastructure bill is about 100 bucks a month, because it runs on old company laptops. The design inverts the usual agent stack: most decisions (routing, permissions, confidence checks) are plain deterministic code, and an LLM is only invoked when code can't classify the problem. The idea worth stealing: put the guardrails and the decision-making outside the model, in code the model can't override, and let people improve the agent with a one-click feedback loop that turns into reviewable PRs.</p>
+<p>&nbsp;</p>
+<p>Watch: <a href="https://youtube.com/watch?v=4okkSoARikg">https://youtube.com/watch?v=4okkSoARikg</a> (WeAreDevelopers WWC26, ~30 min incl. Q&amp;A)</p>
+<p>&nbsp;</p>
+<p><strong>The talk</strong></p>
+<p>&nbsp;</p>
+<p>Trade Republic is a regulated bank, so "let an agent loose on Slack" is not an option. Fajković's answer was to build what he insists is not a bot, not an automation, and not an app, but an employee: something that joins a team's channels, has that team's knowledge, asks colleagues when unsure, receives feedback, and improves. It started as a Monday-evening idea, was a working proof of concept for his own team within days, and was restructured for org-wide use after about three and a half weeks when other teams wanted in. Today it serves engineering, finance, compliance, and legal teams alike, and he says it is production, not a PoC.</p>
+<p>&nbsp;</p>
+<p><strong>The design</strong></p>
+<p>&nbsp;</p>
+<p>1. <strong>Deterministic first, LLM last.</strong> When a Slack message arrives, pure code decides what the problem is, whether the system is confident, and what to do about it. The routing layer spends zero tokens and often decides in under a millisecond. Only when code can't figure out what the problem is about does the system invoke an LLM.</p>
+<p>&nbsp;</p>
+<p>2. <strong>Three confidence gates, configured per channel.</strong> Each channel gets a 0-100 confidence scale with two thresholds. Below the first (say 50): stay quiet, don't spam people. Between them (50-80): propose a solution and tag humans for approval. Above the second (80+): investigate first, then act autonomously. It never auto-merges, because a bank can't have that.</p>
+<p>&nbsp;</p>
+<p>3. <strong>Permissions in code, not in prompts.</strong> He calls the "please don't expose secrets" markdown-file approach hope, not control. Instead there are over 30 categories of security hooks that fire before (and sometimes after) any task, CLI call, or curl command, evaluated deterministically. Some native CLI tools are banned outright in favor of custom wrappers. The system knows who is asking, so a finance document shared with the agent can't be leaked to someone outside finance just by asking nicely.</p>
+<p>&nbsp;</p>
+<p>4. <strong>Compile-time knowledge, not runtime lookup.</strong> Skills, routes, sub-agents, and configs are markdown and YAML artifacts defined at org, domain, or team level, and compiled down into each team's agent. Team IDs, project IDs, and Slack channels get baked into the markdown at compile time, so the LLM never wastes a lookup on "find my team's Jira project." Teams can override org artifacts, with one exception: hooks. A team cannot override a company rule.</p>
+<p>&nbsp;</p>
+<p>5. <strong>Feedback becomes PRs.</strong> Anyone can type a thumbs-up or thumbs-down message in the thread. In the background the system analyzes the thread against its knowledge, then comes back with "I improved myself, want to merge the change?" Teams merged over 500 of these self-improvement PRs within a few months. It never self-improves without a human merging, and it retries a rejected improvement up to three times.</p>
+<p>&nbsp;</p>
+<p>6. <strong>It also shows up uninvited.</strong> Scheduled jobs come in three flavors: pure code (a cron job), full agentic, or a hybrid that checks state in code for free and only escalates to an LLM when needed. A guided mini framework lets compliance, finance, and legal people write these jobs themselves, with checks that keep the result compliant. A knowledge-graph workflow ingests a team's Confluence and a year of conversations, cross-referencing every Jira ticket mentioned. And every Monday it writes a blog post that tags its most frequent collaborators, while the same data pass finds blind spots (problems it failed to auto-trigger on) and files knowledge PRs to fix them.</p>
+<p>&nbsp;</p>
+<p><strong>The numbers</strong></p>
+<p>&nbsp;</p>
+<p>• ~47 teams served, ~150 Slack channels, running 24/7<br>
+• 10,000+ sessions per week, roughly 50,000 problem sessions per month<br>
+• Peak of 60 parallel sessions within a single domain<br>
+• Over 90% of incoming requests solved autonomously in some team channels<br>
+• 500+ self-improvement PRs merged within a few months<br>
+• 30+ categories of deterministic security hooks<br>
+• 15 dashboards, 250+ technical panels, per-route and per-trigger cost tracking<br>
+• Infrastructure cost: about 100 bucks a month, on repurposed company laptops</p>
+<p>&nbsp;</p>
+<p><strong>Caveats</strong></p>
+<p>&nbsp;</p>
+<p>All numbers are the speaker's own; there is no external write-up to check them against, and this recap is built from auto-generated captions, so treat specific figures with care. The 100-bucks figure is explicitly infrastructure only: LLM token costs sit on top, and the talk doesn't give that bill (the whole deterministic-first design exists partly to keep it down). The system is an internal tool, not something you can buy, though he says the engine is generic and hints at where it's going: shared context across Slack, Meet, Jira, and GitHub in one session, and harness- and LLM-agnosticism (Claude Code, Codex, OpenCode, Cursor CLI, Bedrock, GCP, or bare metal) behind a one-line config change. On the "does this replace engineers" question he's direct: the point is not cutting headcount by 50%, it's taking away the two-day dependency-upgrade kind of work nobody enjoys.</p>
+<p>&nbsp;</p>
+<p><strong>Why it matters here</strong></p>
+<p>&nbsp;</p>
+<p>Most agent setups this community runs put the LLM in charge and bolt guardrails on afterwards. This talk describes the opposite architecture, in production, at a bank: code decides, the LLM executes, and policy lives in hooks the model cannot override (he name-checks Anthropic's Claude Tag as a step in the right direction that is still nowhere near this). The compile-time injection trick is immediately usable: anything you know statically about a team or project belongs in the prompt artifact at build time, not in a tool call at runtime. Same for the feedback loop: a reaction in a thread that becomes a reviewable PR against the agent's knowledge is a pattern any of us could wire up with the tools we already use.</p>
+<p>&nbsp;</p>
+<p><strong>Question for the channel:</strong> Which decisions are you currently asking an LLM to make that ordinary code could make instead? In this talk, a simple score of how well an incoming request matches something the agent already knows decides whether it acts, asks a human, or stays quiet. And on the feedback loop: Trade Republic's agent improves by opening PRs against its own knowledge base whenever someone leaves feedback, and teams merged 500+ of them in a few months. Be honest about your own team: would you review those PRs properly, ignore them, or rubber-stamp them without reading?</p>
+<p>&nbsp;</p>
+<p>Web version: <a href="https://ppruchnerovic.github.io/presentations/posts/agentic-employees-fintech/">https://ppruchnerovic.github.io/presentations/posts/agentic-employees-fintech/</a></p>
+</template>
+
+<script>
+function teamsPlainText(container) {
+  return Array.from(container.querySelectorAll('p')).map(function (p) {
+    var c = p.cloneNode(true);
+    c.querySelectorAll('br').forEach(function (b) { b.replaceWith('\n'); });
+    return c.textContent;
+  }).filter(function (s) {
+    return s.replace(/\u00a0/g, ' ').trim() !== '';
+  }).join('\n\n');
+}
+
+async function copyForTeams() {
+  var status = document.getElementById('teams-copy-status');
+  var container = document.createElement('div');
+  container.appendChild(document.getElementById('teams-post').content.cloneNode(true));
+  var html = container.innerHTML;
+  var text = teamsPlainText(container);
+  status.style.display = 'block';
+  try {
+    await navigator.clipboard.write([new ClipboardItem({
+      'text/html': new Blob([html], { type: 'text/html' }),
+      'text/plain': new Blob([text], { type: 'text/plain' })
+    })]);
+    status.textContent = 'Copied. Paste into Teams with a normal paste: bold is kept, colors are not.';
+  } catch (e) {
+    status.textContent = 'Automatic copy is not supported in this browser.';
+  }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intercom bet 90% of the company on a product earning 1% of revenue, renamed itself Fin, and sold to Salesforce for $3.6B. Now 94% of its code is written by Claude</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #181b22;
+    --accent: #e8b64c;
+    --text: #e6e6e6;
+    --muted: #9aa3b2;
+    --border: #262b36;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0 0 60px;
+  }
+  header {
+    background: linear-gradient(135deg, #14161c 0%, #1d2027 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  header .kicker {
+    display: inline-block;
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  header h1 {
+    font-size: 1.9rem;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  header .sub {
+    color: var(--muted);
+    font-size: 0.95rem;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  header .sub a { color: var(--accent); text-decoration: none; }
+  .note {
+    max-width: 860px;
+    margin: 20px auto 0;
+    padding: 12px 18px;
+    background: rgba(232,182,76,0.08);
+    border: 1px solid rgba(232,182,76,0.25);
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-align: left;
+  }
+  main { max-width: 860px; margin: 0 auto; padding: 0 20px; }
+  section h2 {
+    font-size: 1.15rem;
+    color: var(--accent);
+    margin: 44px 0 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .intro-card, .takeaway {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 12px;
+  }
+  .intro-card p, .takeaway p { color: var(--muted); font-size: 0.92rem; }
+  .intro-card p.lead { color: var(--text); font-size: 1rem; }
+  .takeaway .head {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .takeaway .ts {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    height: 30px;
+    border-radius: 999px;
+    background: rgba(232,182,76,0.12);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+  .takeaway h3 { font-size: 1.02rem; font-weight: 600; }
+  .numbers-card ul {
+    list-style: none;
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+  .numbers-card ul li {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .numbers-card ul li:last-child { border-bottom: none; }
+  .numbers-card ul li strong { color: var(--text); font-variant-numeric: tabular-nums; }
+  .cta-card {
+    background: var(--card);
+    border: 1px solid rgba(232,182,76,0.35);
+    border-radius: 12px;
+    padding: 22px 20px;
+    margin-top: 8px;
+    text-align: center;
+  }
+  .cta-card a.button {
+    display: inline-block;
+    background: var(--accent);
+    color: #14161c;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 10px 22px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .cta-card p { color: var(--muted); font-size: 0.9rem; }
+  footer {
+    max-width: 860px;
+    margin: 48px auto 0;
+    padding: 0 20px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<header>
+  <span class="kicker">AI Dev Community · Video recap</span>
+  <h1>Intercom bet 90% of the company on a product earning 1% of revenue, renamed itself Fin, and sold to Salesforce for $3.6B. Now 94% of its code is written by Claude</h1>
+  <div class="sub">WeAreDevelopers WWC26 · ~33 min incl. Q&amp;A · <a href="https://youtube.com/watch?v=zQNmwfm7yqc">Watch on YouTube</a></div>
+  <div class="note"><strong>Note:</strong> Des Traynor, co-founder and Chief Strategy Officer of Fin (formerly Intercom), opening day two of WWC26 Berlin. This recap is based on cleaned auto-generated captions, so treat exact numbers with care; all figures are the speaker's own. The acquisition price appears twice in the video with two values ($3.2B in the intro, $3.6B from Traynor); Traynor's own figure is used here.</div>
+</header>
+<main>
+
+<section>
+<h2>The short version</h2>
+<div class="intro-card">
+<p class="lead">In August 2022 Intercom had five straight quarters of slowing revenue growth, and ChatGPT had just made its human help desk product look obsolete. They put 90% of the company on an AI support agent, Fin, that was under 1% of revenue at the time; today Fin makes over $100M of the company's $400M+ revenue, the company renamed itself Fin, and Salesforce agreed to buy it for $3.6B.</p>
+<p>On the engineering side: productivity tripled, 94% of code is written by Claude, and the fully loaded cost of shipping a feature keeps falling even at $180k a week in token spend. The idea worth stealing: reliability compounds, so a chain of 99%-reliable agent steps yields an ~85%-reliable product nobody buys, and evals, not UI, are where the engineering work now lives.</p>
+</div>
+</section>
+
+<section>
+<h2>Key takeaways</h2>
+
+<div class="takeaway"><div class="head"><span class="ts">1</span><h3>Three inconvenient truths</h3></div>
+<p>AI will make your product irrelevant (unless it was born after 2023), your real competitors are startups founded today rather than the incumbents you benchmark against, and slow adapters die. Some product categories stop needing to exist at all; his (deliberately fictitious) example is status-update and project management tools, which lose their point once AI connects Slack, GitHub, and the rest directly.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">2</span><h3>Products merge and converge</h3></div>
+<p>When the UI becomes "tell us what you want and we'll do it," queries stop respecting product boundaries ("show me which of my best performing sales reps take the most holidays" spans the HR tool and the CRM). Everyone building an agent is suddenly crossing seven or eight product lines. His scoping advice: stop where you hit a different buyer, a different level of data permission, a brand you'd need to rebuild, or a really popular product you don't want to fight.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">3</span><h3>Chat is the end of the usability gap</h3></div>
+<p>The old world split people who know what they want from the few who know which menu does it (his example: conditional formatting in Excel versus just asking for negative cells in red). Their product Operator works this way: upload a PDF of a product launch and say "update all the documentation," and it works out which docs change where. He's blunt about the implication for his own former craft, design: it's not obvious what role classic design systems have left.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">4</span><h3>Reliability compounds, and that's the whole game</h3></div>
+<p>A single agent step at 99% reliability sounds fine; multiply a realistic workflow of such steps and the agent lands near 85%, which nobody buys. Getting from the 80% an enthusiastic weekend with Claude gives you to the 99.99% a sellable product needs is the hard part, and he sees startups announce the homepage before discovering this. Big companies too: he points to a product announced in 2024 that still hasn't shipped.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">5</span><h3>Most improvement is invisible</h3></div>
+<p>Fin resolved about 25% of support conversations at launch; now it's around 75%. Nothing in the UI changed, which leaves marketing with nothing to screenshot: the product simply does what it always claimed, more often. Intercom's famous product principles had to be abandoned wholesale; deterministic build-ship-measure became a messy loop of "what is possible, how reliable can we make it, can we productize it, how do we improve it after we see real-world performance."</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">6</span><h3>New muscles</h3></div>
+<p>Empirical evaluation, scientific rigor, causality, prompting, and post-training their own models (plus about 15 small language models running alongside them). Design flipped from iterating on one expensive direction to exploring many directions in parallel, then refining the winner.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">7</span><h3>Designers ship to production</h3></div>
+<p>A hard rule since last August: everyone learns to deploy. Designers no longer file UI tickets, they fix them; they vibe code the roadmap as interactive prototypes shared with customers; they own the front end entirely. In his words, the decade-long "should designers code" debate is over, "because coders don't even code. Claude codes."</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">8</span><h3>Engineering tripled</h3></div>
+<p>Their CTO targeted doubled productivity before Claude Code's breakout; they tripled it, measured as features shipped to production and used by real people. They also measure individual engineers' AI adoption against output, which he admits nobody likes.</p></div>
+
+</section>
+
+<section>
+<h2>The numbers</h2>
+<div class="intro-card numbers-card">
+<ul>
+<li>Revenue over <strong>$400M</strong>; Fin over <strong>$100M</strong> of it; Salesforce acquisition at <strong>$3.6B</strong></li>
+<li><strong>90%</strong> of the company worked on Fin when it was less than 1% of revenue</li>
+<li>Fin's resolution rate: <strong>~25%</strong> at launch, <strong>~75%</strong> today, with no UI changes</li>
+<li>Engineering productivity <strong>tripled</strong>; backlog halved; 2x user-facing changes shipped; 5x faster merges; code quality up after an initial dip; less downtime</li>
+<li><strong>94%</strong> of code written by Claude, and 20% of that also approved by Claude</li>
+<li><strong>~$180k per week</strong> spent on tokens, yet fully loaded cost per shipped feature (salary plus tokens) is monotonically decreasing</li>
+<li>The Bun anecdote: Jarred Sumner rewrote Bun in Rust in <strong>11 days</strong> solo, against an internal estimate of three senior engineers for a year</li>
+</ul>
+</div>
+</section>
+
+<section>
+<h2>Caveats</h2>
+<div class="intro-card">
+<p>All figures are the speaker's own, from a talk with no external write-up to check against, and this recap is built from auto-generated captions, so treat exact numbers with care (the acquisition price itself appears twice in the video with two different values). Traynor is selling a worldview along with the story: he runs the company whose pivot he's praising, and the talk names no failed bets or costs beyond "some people hated it." In the Q&amp;A he concedes real limits of the say-what-you-want UI: recurring tasks want buttons, Photoshop wants sliders, and "make it slightly darker, again" is nobody's idea of a good interface. He also distinguishes intelligence-hungry use cases (drug discovery), which benefit from every frontier model, from intelligence-full ones (enterprise ticket tracking), where today's models suffice and you should stabilize and post-train rather than chase releases.</p>
+</div>
+</section>
+
+<section>
+<h2>Why it matters for Teams AI builders</h2>
+<div class="intro-card">
+<p>This is what the AI transition looks like from the C-suite of a company that actually made it through, and the operational details match what this community sees on the ground: evals as the core engineering discipline, invisible reliability work displacing feature launches, designers deploying, and cost-per-feature as the metric that justifies heavy token spend. The compound reliability arithmetic is the most immediately usable piece: before you agentify a workflow, multiply out the per-step reliabilities and see whether the product you'd get is one anyone would pay for. And the "intelligence-full vs intelligence-hungry" split from the Q&amp;A is a sharper way to decide whether to chase every model release or lock in and optimize.</p>
+</div>
+</section>
+
+<section>
+<h2>Join the discussion</h2>
+<div class="cta-card">
+<a class="button" href="https://youtube.com/watch?v=zQNmwfm7yqc">▶ Watch the full video</a>
+<p>Traynor claims measuring per-engineer AI adoption against productivity was controversial but necessary once token spend hit $180k a week. If your org plotted every engineer on that chart tomorrow, would you defend the metric or fight it? And a second one from his Q&amp;A: he splits AI use cases into two groups, those where today's models are already smart enough for the job (his example: enterprise ticket tracking) and those still waiting on smarter models (his example: drug discovery). Which of your products or internal tools are already in the first group, where chasing the next model release buys you nothing?</p>
+</div>
+</section>
+
+</main>
+<footer>Source: WeAreDevelopers, "WWC26 - Building the Next Generation of Software" (https://youtube.com/watch?v=zQNmwfm7yqc)<br>
+Web version: <a href="https://ppruchnerovic.github.io/presentations/posts/fin-next-generation-software/" style="color: var(--accent); text-decoration: none;">https://ppruchnerovic.github.io/presentations/posts/fin-next-generation-software/</a></footer>
+
+<style>
+  .teams-copy {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 10;
+    text-align: right;
+  }
+  .teams-copy button {
+    font: inherit;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 12px 20px;
+    border-radius: 999px;
+    border: none;
+    background: var(--accent);
+    color: #14161c;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .teams-copy .status {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--text);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    max-width: 260px;
+    display: none;
+  }
+</style>
+
+<div class="teams-copy">
+  <button type="button" onclick="copyForTeams()">Copy for Teams</button>
+  <div class="status" id="teams-copy-status"></div>
+</div>
+
+<template id="teams-post">
+<p><strong>Intercom bet 90% of the company on a product earning 1% of revenue, renamed itself Fin, and sold to Salesforce for $3.6B. Now 94% of its code is written by Claude</strong></p>
+<p>&nbsp;</p>
+<p><strong>TL;DR:</strong> Des Traynor, co-founder of Intercom, opened day two of WWC26 with the story of how AI nearly killed his company and then remade it. In August 2022 Intercom had five straight quarters of slowing revenue growth, and ChatGPT had just made its human help desk product look obsolete. They put 90% of the company on an AI support agent, Fin, that was under 1% of revenue at the time; today Fin makes over $100M of the company's $400M+ revenue, the company renamed itself Fin, and Salesforce agreed to buy it for $3.6B. On the engineering side: productivity tripled, 94% of code is written by Claude, and the fully loaded cost of shipping a feature keeps falling even at $180k a week in token spend. The idea worth stealing: reliability compounds, so a chain of 99%-reliable agent steps yields an ~85%-reliable product nobody buys, and evals, not UI, are where the engineering work now lives.</p>
+<p>&nbsp;</p>
+<p>Watch: <a href="https://youtube.com/watch?v=zQNmwfm7yqc">https://youtube.com/watch?v=zQNmwfm7yqc</a> (WeAreDevelopers WWC26, ~33 min incl. Q&amp;A)</p>
+<p>&nbsp;</p>
+<p><strong>The talk</strong></p>
+<p>&nbsp;</p>
+<p>Traynor structures the talk as three claims: AI changes what you build, how you build, and the momentum of your team. The frame is a survival story. Intercom's 2022 options were, in his words, die or fight, and the fix was not a feature but a rebuild of everything: strategy, mission, culture, pricing, packaging, selling, branding, and finally the company name. He says the only things unchanged are the canteen and the bathrooms. His advice to anyone attempting the same transition: some customers, employees, and shareholders will hate it, and "you have to go too far to know that you've gone far enough."</p>
+<p>&nbsp;</p>
+<p><strong>What you build</strong></p>
+<p>&nbsp;</p>
+<p>1. <strong>Three inconvenient truths.</strong> AI will make your product irrelevant (unless it was born after 2023), your real competitors are startups founded today rather than the incumbents you benchmark against, and slow adapters die. Some product categories stop needing to exist at all; his (deliberately fictitious) example is status-update and project management tools, which lose their point once AI connects Slack, GitHub, and the rest directly.</p>
+<p>&nbsp;</p>
+<p>2. <strong>Products merge and converge.</strong> When the UI becomes "tell us what you want and we'll do it," queries stop respecting product boundaries ("show me which of my best performing sales reps take the most holidays" spans the HR tool and the CRM). Everyone building an agent is suddenly crossing seven or eight product lines. His scoping advice: stop where you hit a different buyer, a different level of data permission, a brand you'd need to rebuild, or a really popular product you don't want to fight.</p>
+<p>&nbsp;</p>
+<p>3. <strong>Chat is the end of the usability gap.</strong> The old world split people who know what they want from the few who know which menu does it (his example: conditional formatting in Excel versus just asking for negative cells in red). Their product Operator works this way: upload a PDF of a product launch and say "update all the documentation," and it works out which docs change where. He's blunt about the implication for his own former craft, design: it's not obvious what role classic design systems have left.</p>
+<p>&nbsp;</p>
+<p><strong>How you build</strong></p>
+<p>&nbsp;</p>
+<p>4. <strong>Reliability compounds, and that's the whole game.</strong> A single agent step at 99% reliability sounds fine; multiply a realistic workflow of such steps and the agent lands near 85%, which nobody buys. Getting from the 80% an enthusiastic weekend with Claude gives you to the 99.99% a sellable product needs is the hard part, and he sees startups announce the homepage before discovering this. Big companies too: he points to a product announced in 2024 that still hasn't shipped.</p>
+<p>&nbsp;</p>
+<p>5. <strong>Most improvement is invisible.</strong> Fin resolved about 25% of support conversations at launch; now it's around 75%. Nothing in the UI changed, which leaves marketing with nothing to screenshot: the product simply does what it always claimed, more often. Intercom's famous product principles and posters had to be abandoned wholesale; deterministic build-ship-measure became a messy loop of "what is possible, how reliable can we make it, can we productize it, how do we improve it after we see real-world performance."</p>
+<p>&nbsp;</p>
+<p>6. <strong>New muscles.</strong> Empirical evaluation, scientific rigor, causality, prompting, and post-training their own models (plus about 15 small language models running alongside them). Design flipped from iterating on one expensive direction to exploring many directions in parallel, then refining the winner.</p>
+<p>&nbsp;</p>
+<p><strong>The team</strong></p>
+<p>&nbsp;</p>
+<p>7. <strong>Designers ship to production.</strong> A hard rule since last August: everyone learns to deploy. Designers no longer file UI tickets, they fix them; they vibe code the roadmap as interactive prototypes shared with customers; they own the front end entirely. In his words, the decade-long "should designers code" debate is over, "because coders don't even code. Claude codes."</p>
+<p>&nbsp;</p>
+<p>8. <strong>Engineering tripled.</strong> Their CTO targeted doubled productivity before Claude Code's breakout; they tripled it, measured as features shipped to production and used by real people. They also measure individual engineers' AI adoption against output, which he admits nobody likes.</p>
+<p>&nbsp;</p>
+<p><strong>The numbers</strong></p>
+<p>&nbsp;</p>
+<p>• Revenue over $400M; Fin over $100M of it; Salesforce acquisition at $3.6B (the compere's intro says $3.2B; Traynor's own figure is used here)<br>
+• 90% of the company worked on Fin when it was less than 1% of revenue<br>
+• Fin's resolution rate: ~25% at launch, ~75% today, with no UI changes<br>
+• Engineering productivity tripled; backlog halved; 2x user-facing changes shipped; 5x faster merges; code quality up after an initial dip; less downtime<br>
+• 94% of code written by Claude, and 20% of that also approved by Claude<br>
+• ~$180k per week spent on tokens, yet fully loaded cost per shipped feature (salary plus tokens) is monotonically decreasing<br>
+• The Bun anecdote: Jarred Sumner rewrote Bun in Rust in 11 days solo, against an internal estimate of three senior engineers for a year</p>
+<p>&nbsp;</p>
+<p><strong>Caveats</strong></p>
+<p>&nbsp;</p>
+<p>All figures are the speaker's own, from a talk with no external write-up to check against, and this recap is built from auto-generated captions, so treat exact numbers with care (the acquisition price itself appears twice in the video with two different values). Traynor is selling a worldview along with the story: he runs the company whose pivot he's praising, and the talk names no failed bets or costs beyond "some people hated it." In the Q&amp;A he concedes real limits of the say-what-you-want UI: recurring tasks want buttons, Photoshop wants sliders, and "make it slightly darker, again" is nobody's idea of a good interface. He also distinguishes intelligence-hungry use cases (drug discovery), which benefit from every frontier model, from intelligence-full ones (enterprise ticket tracking), where today's models suffice and you should stabilize and post-train rather than chase releases.</p>
+<p>&nbsp;</p>
+<p><strong>Why it matters here</strong></p>
+<p>&nbsp;</p>
+<p>This is what the AI transition looks like from the C-suite of a company that actually made it through, and the operational details match what this community sees on the ground: evals as the core engineering discipline, invisible reliability work displacing feature launches, designers deploying, and cost-per-feature as the metric that justifies heavy token spend. The compound reliability arithmetic is the most immediately usable piece: before you agentify a workflow, multiply out the per-step reliabilities and see whether the product you'd get is one anyone would pay for. And the "intelligence-full vs intelligence-hungry" split from the Q&amp;A is a sharper way to decide whether to chase every model release or lock in and optimize.</p>
+<p>&nbsp;</p>
+<p>Watch: <a href="https://youtube.com/watch?v=zQNmwfm7yqc">https://youtube.com/watch?v=zQNmwfm7yqc</a></p>
+<p>&nbsp;</p>
+<p><strong>Question for the channel:</strong> Traynor claims measuring per-engineer AI adoption against productivity was controversial but necessary once token spend hit $180k a week. If your org plotted every engineer on that chart tomorrow, would you defend the metric or fight it? And a second one from his Q&amp;A: he splits AI use cases into two groups, those where today's models are already smart enough for the job (his example: enterprise ticket tracking) and those still waiting on smarter models (his example: drug discovery). Which of your products or internal tools are already in the first group, where chasing the next model release buys you nothing?</p>
+<p>&nbsp;</p>
+<p>Web version: <a href="https://ppruchnerovic.github.io/presentations/posts/fin-next-generation-software/">https://ppruchnerovic.github.io/presentations/posts/fin-next-generation-software/</a></p>
+</template>
+
+<script>
+function teamsPlainText(container) {
+  return Array.from(container.querySelectorAll('p')).map(function (p) {
+    var c = p.cloneNode(true);
+    c.querySelectorAll('br').forEach(function (b) { b.replaceWith('\n'); });
+    return c.textContent;
+  }).filter(function (s) {
+    return s.replace(/\u00a0/g, ' ').trim() !== '';
+  }).join('\n\n');
+}
+
+async function copyForTeams() {
+  var status = document.getElementById('teams-copy-status');
+  var container = document.createElement('div');
+  container.appendChild(document.getElementById('teams-post').content.cloneNode(true));
+  var html = container.innerHTML;
+  var text = teamsPlainText(container);
+  status.style.display = 'block';
+  try {
+    await navigator.clipboard.write([new ClipboardItem({
+      'text/html': new Blob([html], { type: 'text/html' }),
+      'text/plain': new Blob([text], { type: 'text/plain' })
+    })]);
+    status.textContent = 'Copied. Paste into Teams with a normal paste: bold is kept, colors are not.';
+  } catch (e) {
+    status.textContent = 'Automatic copy is not supported in this browser.';
+  }
+}
+</script>
+
+</body>
+</html>

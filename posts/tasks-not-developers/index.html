@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Typists vanished, typing didn't: why AI replaces developer tasks, not developers</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #181b22;
+    --accent: #e8b64c;
+    --text: #e6e6e6;
+    --muted: #9aa3b2;
+    --border: #262b36;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0 0 60px;
+  }
+  header {
+    background: linear-gradient(135deg, #14161c 0%, #1d2027 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  header .kicker {
+    display: inline-block;
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  header h1 {
+    font-size: 1.9rem;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  header .sub {
+    color: var(--muted);
+    font-size: 0.95rem;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  header .sub a { color: var(--accent); text-decoration: none; }
+  .note {
+    max-width: 860px;
+    margin: 20px auto 0;
+    padding: 12px 18px;
+    background: rgba(232,182,76,0.08);
+    border: 1px solid rgba(232,182,76,0.25);
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-align: left;
+  }
+  main { max-width: 860px; margin: 0 auto; padding: 0 20px; }
+  section h2 {
+    font-size: 1.15rem;
+    color: var(--accent);
+    margin: 44px 0 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .intro-card, .takeaway {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 12px;
+  }
+  .intro-card p, .takeaway p { color: var(--muted); font-size: 0.92rem; }
+  .intro-card p.lead { color: var(--text); font-size: 1rem; }
+  .intro-card p + p { margin-top: 10px; }
+  .takeaway .head {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .takeaway .ts {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    height: 30px;
+    border-radius: 999px;
+    background: rgba(232,182,76,0.12);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+  .takeaway h3 { font-size: 1.02rem; font-weight: 600; }
+  .cta-card {
+    background: var(--card);
+    border: 1px solid rgba(232,182,76,0.35);
+    border-radius: 12px;
+    padding: 22px 20px;
+    margin-top: 8px;
+    text-align: center;
+  }
+  .cta-card a.button {
+    display: inline-block;
+    background: var(--accent);
+    color: #14161c;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 10px 22px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .cta-card p { color: var(--muted); font-size: 0.9rem; }
+  footer {
+    max-width: 860px;
+    margin: 48px auto 0;
+    padding: 0 20px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<header>
+  <span class="kicker">AI Dev Community · Video recap</span>
+  <h1>Typists vanished, typing didn't: why AI replaces developer tasks, not developers (and why one CEO bets his company against spec-driven development)</h1>
+  <div class="sub">WeAreDevelopers WWC26 · ~22 min incl. Q&amp;A · <a href="https://youtube.com/watch?v=jVfYpkTMy8o">Watch on YouTube</a></div>
+  <div class="note"><strong>Note:</strong> Peter Caron, CEO of 3T Software Labs (the Berlin company behind Studio 3T for MongoDB), on how AI unbundles the developer role. This recap is based on cleaned auto-generated captions, so treat quotes as close paraphrases; the takeaway badges are sequence numbers, not timestamps.</div>
+</header>
+<main>
+
+<section>
+<h2>The short version</h2>
+<div class="intro-card">
+<p class="lead">Caron argues that AI is unbundling the developer role the way word processors unbundled the typing pool: the typist role vanished in the 1980s and 90s, but typing never went away. Companies firing engineers by the thousands are, in his view, confusing a role with the bundle of tasks inside it. AI replaces the tasks; it does not replace the function that coordinates them.</p>
+<p>The engineer's job shifts from doing the work to governing it: keeping AI-produced code maintainable so the best people don't end up as "slop janitors," managing outcomes and risk, and intervening at the inflection points where agents need redirecting. In the Q&amp;A he goes further and says spec-driven development never worked, calls it waterfall reborn, and would "bet my company" that going back in that direction fails. The idea worth stealing: figure out where in your workflow a human decision actually changes the outcome, and own those points, because that is the part of the role that survives.</p>
+</div>
+</section>
+
+<section>
+<h2>Key takeaways</h2>
+
+<div class="takeaway"><div class="head"><span class="ts">1</span><h3>A role is not its task list</h3></div>
+<p>If you define your work as a bundle of tasks, AI can replace each task one by one. What it can't replace is the function those tasks served inside the workflow. The whole talk hangs on keeping those two things separate.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">2</span><h3>The typing pool is the template</h3></div>
+<p>Managers once handwrote letters and sent them to a room of typists for typing, corrections, and retyping. Word processors absorbed every task in that loop, so the typist role ceased to exist, but typing just moved into everyone's hands inside a new workflow. Caron says the same shift is already underway for developers, and tells on himself: a colleague asked him about software he'd bragged about writing, "Did you write it, or did Claude write it?" His answer: the AI could never have come up with the idea (a proxy between client and database), because it lacks his business sense.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">3</span><h3>Mass layoffs read the analogy wrong</h3></div>
+<p>He points at the reported 8,000 cuts at Meta and 12,000 at Amazon as leadership believing an AI agent can take over the role of a developer, when it only takes over some of the tasks. Counterintuitively, he expects AI to increase the number of people working in the software development life cycle, though "those will not be Rust developers or Go developers or, God help us, React developers."</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">4</span><h3>Bolting AI onto existing workflows produces slop faster</h3></div>
+<p>Task-level change means making Claude or Copilot write code faster inside the process you already have; he notes most vendor talks at the conference still pitch exactly that. His line: you can't stuff the square peg of AI software development into the round hole of Jira. System-level change alters who creates value, already visible in non-engineers building products over a weekend with Lovable. Those people can build, but they're badly placed to make the decisions. The best engineers are well placed, and that's where the role goes.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">5</span><h3>The surviving role is governance</h3></div>
+<p>Overseeing maintainable code (David Farley's definition: code that's easy to change), because AI often produces the opposite and turns the best engineers into slop janitors. Managing outcomes, because every hallucination story ends with the AI doing something no human would have thought to do. Controlling change, meaning no runaway agents. And managing risk: if you don't design the workflow up front, someone will eventually ask an agent to "identify all the PII in my database," at which point the PII sits in the model's context and the protection is defeated.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">6</span><h3>Developer and product owner converge</h3></div>
+<p>Product owners get more involved in creating code by working at the inflection points; developers have to get much better at understanding the business reason the software exists. Donella Meadows' "leverage points" turn into the actual job description: find the places in the new workflows where human intervention changes the outcome, and own them.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">7</span><h3>Q&amp;A: spec-driven development is waterfall reborn</h3></div>
+<p>Asked about agile versus spec-driven development, he answers that spec-driven development never worked at all: defining everything up front was called waterfall, it didn't work when humans typed, and he doubts it works when AI types. "I would actually bet my company on it." He mentions his friend Adam Tornhill just blogged on the topic.</p></div>
+
+</section>
+
+<section>
+<h2>Caveats</h2>
+<div class="intro-card">
+<p>The talk is a position piece. It offers no experiments or metrics, and the Meta and Amazon layoff figures are the speaker's shorthand for news reports, unsourced in the talk itself. Caron runs a database tooling company, and his recurring example (a proxy between client and database that keeps PII away from both engineers and agents) is close to what his company sells. The spec-driven verdict is a single Q&amp;A answer rather than a worked comparison, and talks we've shared here before (Martinelli's spec-driven lessons, the spec-in-the-loop talk) argue the opposite corner. His frame draws on Donella Meadows' "Thinking in Systems" and Sangeet Paul Choudary's 2025 book "Reshuffle."</p>
+</div>
+</section>
+
+<section>
+<h2>Why it matters for Teams AI builders</h2>
+<div class="intro-card">
+<p>Most of what this community discusses is task-level: better prompts, better harnesses, faster loops. This talk argues the task level is exactly what commoditizes first, and it suggests a usable exercise: write down your own workflow, mark the points where a human decision actually redirects the outcome, and check how much of your week happens at those points versus in the parts an agent already handles. The PII example also generalizes into something immediately actionable: any data your agent is asked to find or summarize ends up in its context, so "protect the data by asking the agent to locate it" is a self-defeating workflow, and it has to be designed around before you give an agent database access.</p>
+</div>
+</section>
+
+<section>
+<h2>Join the discussion</h2>
+<div class="cta-card">
+<a class="button" href="https://youtube.com/watch?v=jVfYpkTMy8o">▶ Watch the full video</a>
+<p>Caron would bet his company that spec-driven development doesn't work, while two earlier talks we shared here argue specs are precisely how you keep agents on the rails. Where do you land after your last few projects: did writing the spec up front pay off, or did it rot into waterfall the moment the code diverged from it?</p>
+</div>
+</section>
+
+</main>
+<footer>Source: WeAreDevelopers, "WWC26 - Why optimizing for system comprehension is key to implementing AI for software development" (https://youtube.com/watch?v=jVfYpkTMy8o)<br>
+Web version: <a href="https://ppruchnerovic.github.io/presentations/posts/tasks-not-developers/" style="color: var(--accent);">https://ppruchnerovic.github.io/presentations/posts/tasks-not-developers/</a></footer>
+
+<style>
+  .teams-copy {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 10;
+    text-align: right;
+  }
+  .teams-copy button {
+    font: inherit;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 12px 20px;
+    border-radius: 999px;
+    border: none;
+    background: var(--accent);
+    color: #14161c;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .teams-copy .status {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--text);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    max-width: 260px;
+    display: none;
+  }
+</style>
+
+<div class="teams-copy">
+  <button type="button" onclick="copyForTeams()">Copy for Teams</button>
+  <div class="status" id="teams-copy-status"></div>
+</div>
+
+<template id="teams-post">
+<p><strong>Typists vanished, typing didn't: why AI replaces developer tasks, not developers (and why one CEO bets his company against spec-driven development)</strong></p>
+<p>&nbsp;</p>
+<p><strong>TL;DR:</strong> Peter Caron, CEO of 3T Software Labs (the Berlin company behind Studio 3T for MongoDB), argues that AI is unbundling the developer role the way word processors unbundled the typing pool: the typist role vanished in the 1980s and 90s, but typing never went away. Companies firing engineers by the thousands are, in his view, confusing a role with the bundle of tasks inside it. AI replaces the tasks; it does not replace the function that coordinates them. The engineer's job shifts from doing the work to governing it: keeping AI-produced code maintainable so the best people don't end up as "slop janitors," managing outcomes and risk, and intervening at the inflection points where agents need redirecting. In the Q&amp;A he goes further and says spec-driven development never worked, calls it waterfall reborn, and would "bet my company" that going back in that direction fails. The idea worth stealing: figure out where in your workflow a human decision actually changes the outcome, and own those points, because that is the part of the role that survives.</p>
+<p>&nbsp;</p>
+<p>Watch: <a href="https://youtube.com/watch?v=jVfYpkTMy8o">https://youtube.com/watch?v=jVfYpkTMy8o</a> (WeAreDevelopers WWC26, ~22 min incl. Q&amp;A)</p>
+<p>&nbsp;</p>
+<p><strong>The talk</strong></p>
+<p>&nbsp;</p>
+<p>A conceptual keynote from day three of WWC26, with no tooling demo in it. Caron's frame comes from systems thinking (he cites Donella Meadows' "Thinking in Systems" and Sangeet Paul Choudary's 2025 book "Reshuffle"): you can see a developer either task-centrically, as a bundle of tasks (define, code, test, deploy), or system-centrically, as a function inside a workflow. His claim is that the first view is exactly the mistake technical leaders are making right now, and that the meaning of "developer" will have changed within one to two years.</p>
+<p>&nbsp;</p>
+<p><strong>The argument</strong></p>
+<p>&nbsp;</p>
+<p>1. <strong>A role is not its task list.</strong> If you define your work as a bundle of tasks, AI can replace each task one by one. What it can't replace is the function those tasks served inside the workflow. The whole talk hangs on keeping those two things separate.</p>
+<p>&nbsp;</p>
+<p>2. <strong>The typing pool is the template.</strong> Managers once handwrote letters and sent them to a room of typists for typing, corrections, and retyping. Word processors absorbed every task in that loop, so the typist role ceased to exist, but typing itself just moved into everyone's hands inside a new workflow. Caron says the same shift is already underway for us: most developers spend little time actually typing code now, and AI is very good at typing. He tells on himself here: a colleague recently asked him, about software he'd bragged about writing, "Did you write it, or did Claude write it?" His answer is that the AI could never have come up with the idea (a proxy between client and database), because it lacks his business sense.</p>
+<p>&nbsp;</p>
+<p>3. <strong>Mass layoffs read the analogy wrong.</strong> He points at the reported 8,000 cuts at Meta and 12,000 at Amazon as leadership believing an AI agent can take over the role of a developer, when it only takes over some of the tasks. Counterintuitively, he expects AI to increase the number of people working in the software development life cycle, though "those will not be Rust developers or Go developers or, God help us, React developers."</p>
+<p>&nbsp;</p>
+<p>4. <strong>Bolting AI onto existing workflows produces slop faster.</strong> Task-level change means making Claude or Copilot write code faster inside the process you already have; he notes most vendor talks at the conference still pitch exactly that. His line: you can't stuff the square peg of AI software development into the round hole of Jira. System-level change alters who creates value, and it's already visible in non-engineers building products over a weekend with Lovable. Those people can build, but they're badly placed to make the decisions. The best engineers are well placed, and that's where the role goes.</p>
+<p>&nbsp;</p>
+<p>5. <strong>The surviving role is governance.</strong> Overseeing maintainable code: he cites David Farley's definition of good code as code that's easy to change, and warns that AI often produces the opposite, turning the best engineers into slop janitors. Managing outcomes, because every hallucination story ends with the AI doing something no human would have thought to do. Controlling change, meaning no runaway agents. And managing risk, with a concrete example: if you don't design the workflow up front, someone will eventually ask an agent to "identify all the PII in my database," at which point the PII sits in the model's context and the protection is defeated.</p>
+<p>&nbsp;</p>
+<p>6. <strong>Developer and product owner converge.</strong> Product owners get more involved in creating code by working at the inflection points; developers have to get much better at understanding the business reason the software exists. Meadows' "leverage points" turn into the actual job description: find the places in the new workflows where human intervention changes the outcome, and own them.</p>
+<p>&nbsp;</p>
+<p>7. <strong>Q&amp;A: spec-driven development is waterfall reborn.</strong> Asked about agile versus spec-driven development, he answers that spec-driven development never worked at all: defining everything up front was called waterfall, it didn't work when humans typed, and he doubts it works when AI types. "I would actually bet my company on it." He mentions his friend Adam Tornhill just blogged on the topic.</p>
+<p>&nbsp;</p>
+<p><strong>Caveats</strong></p>
+<p>&nbsp;</p>
+<p>The talk is a position piece. It offers no experiments or metrics, and the Meta and Amazon layoff figures are the speaker's shorthand for news reports, unsourced in the talk itself. Caron runs a database tooling company, and his recurring example (a proxy between client and database that keeps PII away from both engineers and agents) is close to what his company sells. The spec-driven verdict is a single Q&amp;A answer rather than a worked comparison, and talks we've shared here before (Martinelli's spec-driven lessons, the spec-in-the-loop talk) argue the opposite corner. This recap is built from auto-generated captions, so treat quotes as close paraphrases.</p>
+<p>&nbsp;</p>
+<p><strong>Why it matters here</strong></p>
+<p>&nbsp;</p>
+<p>Most of what this channel discusses is task-level: better prompts, better harnesses, faster loops. This talk argues the task level is exactly what commoditizes first, and it suggests a usable exercise: write down your own workflow, mark the points where a human decision actually redirects the outcome, and check how much of your week happens at those points versus in the parts an agent already handles. The PII example also generalizes into something immediately actionable: any data your agent is asked to find or summarize ends up in its context, so "protect the data by asking the agent to locate it" is a self-defeating workflow, and it has to be designed around before you give an agent database access.</p>
+<p>&nbsp;</p>
+<p>Watch: <a href="https://youtube.com/watch?v=jVfYpkTMy8o">https://youtube.com/watch?v=jVfYpkTMy8o</a></p>
+<p>&nbsp;</p>
+<p><strong>Question for the channel:</strong> Caron would bet his company that spec-driven development doesn't work, while two earlier talks we shared here argue specs are precisely how you keep agents on the rails. Where do you land after your last few projects: did writing the spec up front pay off, or did it rot into waterfall the moment the code diverged from it?</p>
+<p>&nbsp;</p>
+<p>Web version: <a href="https://ppruchnerovic.github.io/presentations/posts/tasks-not-developers/">https://ppruchnerovic.github.io/presentations/posts/tasks-not-developers/</a></p>
+</template>
+
+<script>
+function teamsPlainText(container) {
+  return Array.from(container.querySelectorAll('p')).map(function (p) {
+    var c = p.cloneNode(true);
+    c.querySelectorAll('br').forEach(function (b) { b.replaceWith('\n'); });
+    return c.textContent;
+  }).filter(function (s) {
+    return s.replace(/\u00a0/g, ' ').trim() !== '';
+  }).join('\n\n');
+}
+
+async function copyForTeams() {
+  var status = document.getElementById('teams-copy-status');
+  var container = document.createElement('div');
+  container.appendChild(document.getElementById('teams-post').content.cloneNode(true));
+  var html = container.innerHTML;
+  var text = teamsPlainText(container);
+  status.style.display = 'block';
+  try {
+    await navigator.clipboard.write([new ClipboardItem({
+      'text/html': new Blob([html], { type: 'text/html' }),
+      'text/plain': new Blob([text], { type: 'text/plain' })
+    })]);
+    status.textContent = 'Copied. Paste into Teams with a normal paste: bold is kept, colors are not.';
+  } catch (e) {
+    status.textContent = 'Automatic copy is not supported in this browser.';
+  }
+}
+</script>
+
+</body>
+</html>

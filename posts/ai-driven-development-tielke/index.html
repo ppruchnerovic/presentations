@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>He set out to prove AI can't build enterprise software. He shipped 420,000 lines in 45 days instead.</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #181b22;
+    --accent: #e8b64c;
+    --text: #e6e6e6;
+    --muted: #9aa3b2;
+    --border: #262b36;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0 0 60px;
+  }
+  header {
+    background: linear-gradient(135deg, #14161c 0%, #1d2027 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  header .kicker {
+    display: inline-block;
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  header h1 {
+    font-size: 1.9rem;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  header .sub {
+    color: var(--muted);
+    font-size: 0.95rem;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  header .sub a { color: var(--accent); text-decoration: none; }
+  .note {
+    max-width: 860px;
+    margin: 20px auto 0;
+    padding: 12px 18px;
+    background: rgba(232,182,76,0.08);
+    border: 1px solid rgba(232,182,76,0.25);
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-align: left;
+  }
+  main { max-width: 860px; margin: 0 auto; padding: 0 20px; }
+  section h2 {
+    font-size: 1.15rem;
+    color: var(--accent);
+    margin: 44px 0 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .intro-card, .takeaway {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 12px;
+  }
+  .intro-card p, .takeaway p { color: var(--muted); font-size: 0.92rem; }
+  .intro-card p.lead { color: var(--text); font-size: 1rem; }
+  .intro-card p + p, .takeaway p + p { margin-top: 8px; }
+  .intro-card ul { color: var(--muted); font-size: 0.92rem; padding-left: 20px; }
+  .intro-card ul li + li { margin-top: 6px; }
+  .takeaway .head {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .takeaway .ts {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    height: 30px;
+    border-radius: 999px;
+    background: rgba(232,182,76,0.12);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+  .takeaway h3 { font-size: 1.02rem; font-weight: 600; }
+  .numbers-card ul {
+    list-style: none;
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+  .numbers-card ul li {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .numbers-card ul li:last-child { border-bottom: none; }
+  .numbers-card ul li strong { color: var(--text); font-variant-numeric: tabular-nums; }
+  .cta-card {
+    background: var(--card);
+    border: 1px solid rgba(232,182,76,0.35);
+    border-radius: 12px;
+    padding: 22px 20px;
+    margin-top: 8px;
+    text-align: center;
+  }
+  .cta-card a.button {
+    display: inline-block;
+    background: var(--accent);
+    color: #14161c;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 10px 22px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .cta-card p { color: var(--muted); font-size: 0.9rem; }
+  footer {
+    max-width: 860px;
+    margin: 48px auto 0;
+    padding: 0 20px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<header>
+  <span class="kicker">AI Dev Community · Video recap</span>
+  <h1>He set out to prove AI can't build enterprise software. He shipped 420,000 lines in 45 days instead.</h1>
+  <div class="sub">WeAreDevelopers WWC26 · David Tielke · ~33 min · <a href="https://www.youtube.com/watch?v=HS8BvnGdehQ">Watch on YouTube</a></div>
+  <div class="note"><strong>Note:</strong> Recap based on the talk's auto-generated captions, so takeaways are not anchored to timestamps.</div>
+</header>
+<main>
+
+<section>
+<h2>The short version</h2>
+<div class="intro-card">
+<p class="lead">David Tielke, a software architect who describes himself as addicted to quality, rebuilt his company's business application with AI agents: 420,000 lines of .NET microservices and about 200 n8n workflows, solo, in 45 working days, for roughly $25k. Two of his client teams estimated the same scope at around 19 person-years, about $2M.</p>
+<p>The useful part of the talk is not the speed claim. It's his "harness" method: architecture and design guidelines fed to the agent as a system prompt, with static analysis run as a hard quality gate after every generation step, so he reviews the harness instead of the code.</p>
+</div>
+</section>
+
+<section>
+<h2>The experiment</h2>
+<div class="intro-card">
+<p>Tielke went in as a skeptic. His stated goal was to find AI's limits fast, because his clients were vibe coding replacements for ERP systems with no software background, and he wanted to stop that. So he set enterprise constraints on purpose: .NET microservices behind a Traefik API gateway, Blazor and React frontends, n8n as the workflow engine, a local Qwen model on AMD hardware acting as the brain of an office-work agent, plus full test and production environments with CI on self-hosted Gitea. This was his real accounting, invoicing and booking system, rebuilt from scratch over 4.5 months of night work.</p>
+</div>
+</section>
+
+<section>
+<h2>The method, in four phases</h2>
+
+<div class="takeaway"><div class="head"><span class="ts">1</span><h3>Micromanagement</h3></div>
+<p>Prompt, generate, review every line. The way most of us work today. It doesn't scale.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">2</span><h3>Quality-driven</h3></div>
+<p>He wrote his architecture and design guidelines into the agent's system prompt, then ran ReSharper and NDepend (880 structural rules) as a quality gate after every generation step. The key move: when output was wrong, he didn't fix the code, he fixed the harness so the mistake couldn't recur. After this phase he says he essentially stopped reading generated code.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">3</span><h3>Spec-driven and test-driven</h3></div>
+<p>One spec document per feature as the single source of truth; the agent derives its prompts from it. Tests are generated only from the spec's acceptance criteria, never from the code, so they verify the requirement rather than the implementation.</p></div>
+
+<div class="takeaway"><div class="head"><span class="ts">4</span><h3>Idea and voice-driven</h3></div>
+<p>A nightly regenerated system prompt of about 440 pages describing the whole app, loaded into Claude on his phone. He designed his largest module during a 4.5-hour voice conversation while driving to Vienna. Claude pushed back with references to existing modules and German tax law, then produced the idea file that became the spec.</p></div>
+
+</section>
+
+<section>
+<h2>The numbers</h2>
+<div class="intro-card numbers-card">
+<ul>
+<li>Effort: 45 working days solo, versus roughly 19 person-years (the average of estimates from two of his client teams, from Claude and Codex, and from his own three-day estimation exercise).</li>
+<li>Cost: about $25k all in. He burned 22 billion tokens, which would be $21k at Anthropic API rates but cost him about $1,600 through two Claude Max subscriptions.</li>
+<li>Quality: 85% test coverage, 0% technical and structural debt (everything gated by the 880 NDepend rules), documentation regenerated nightly. His client teams' comparable projects average around 30% debt, 33% documentation (mostly stale) and 60% coverage.</li>
+</ul>
+</div>
+</section>
+
+<section>
+<h2>The caveats he names himself</h2>
+<div class="intro-card">
+<p>Greenfield only; brownfield needs a different approach. He's a very experienced architect who already knew the domain and the requirements. And he tells the audience to ignore the "93x faster" headline the German press ran with: in his words, it doesn't matter whether it's 39x or 25x, it's way faster, and the quality is outstanding if you do it the right way.</p>
+</div>
+</section>
+
+<section>
+<h2>What's worth stealing</h2>
+<div class="intro-card">
+<p>The claim worth debating in our channel: code review doesn't scale with AI output volume, but harness review does. Tielke stopped inspecting output and invested in the machinery that constrains output instead. Guidelines live in the system prompt, static analysis acts as the gate, specs are the source of truth. His closing advice on where developers should invest their skills: specification writing, architecture, DevOps, testing, and harness building.</p>
+</div>
+</section>
+
+<section>
+<h2>Join the discussion</h2>
+<div class="cta-card">
+<a class="button" href="https://www.youtube.com/watch?v=HS8BvnGdehQ">▶ Watch the full video</a>
+<p>I'm no expert on testing methodologies, but I expect some tests are easier to generate (unit tests), some much harder (end-to-end), and some close to impossible when you don't have access to every component of the production environment. So a question for the more experienced test automation engineers here: what mix of test types, and what level of coverage, would be enough to fully trust AI-generated code? And one more attribute that's hard to measure: how maintainable will this code still be after 6 months, or 3 years, of changes made by AI agents?</p>
+</div>
+</section>
+
+</main>
+<footer>Source: WeAreDevelopers, "WWC26 - AI Driven Development" (https://www.youtube.com/watch?v=HS8BvnGdehQ)<br>
+Web version: <a href="https://ppruchnerovic.github.io/presentations/posts/ai-driven-development-tielke/" style="color: var(--accent); text-decoration: none;">https://ppruchnerovic.github.io/presentations/posts/ai-driven-development-tielke/</a></footer>
+
+<style>
+  .teams-copy {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 10;
+    text-align: right;
+  }
+  .teams-copy button {
+    font: inherit;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 12px 20px;
+    border-radius: 999px;
+    border: none;
+    background: var(--accent);
+    color: #14161c;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .teams-copy .status {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--text);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    max-width: 260px;
+    display: none;
+  }
+</style>
+
+<div class="teams-copy">
+  <button type="button" onclick="copyForTeams()">Copy for Teams</button>
+  <div class="status" id="teams-copy-status"></div>
+</div>
+
+<template id="teams-post">
+<p><strong>He set out to prove AI can't build enterprise software. He shipped 420,000 lines in 45 days instead.</strong></p>
+<p>&nbsp;</p>
+<p><strong>TL;DR:</strong> David Tielke, a software architect who describes himself as addicted to quality, rebuilt his company's business application with AI agents: 420,000 lines of .NET microservices and about 200 n8n workflows, solo, in 45 working days, for roughly $25k. Two of his client teams estimated the same scope at around 19 person-years, about $2M. The useful part of the talk is not the speed claim. It's his "harness" method: architecture and design guidelines fed to the agent as a system prompt, with static analysis run as a hard quality gate after every generation step, so he reviews the harness instead of the code.</p>
+<p>&nbsp;</p>
+<p>Watch: <a href="https://www.youtube.com/watch?v=HS8BvnGdehQ">https://www.youtube.com/watch?v=HS8BvnGdehQ</a> (WeAreDevelopers WWC26, ~33 min)</p>
+<p>&nbsp;</p>
+<p><strong>The experiment</strong></p>
+<p>&nbsp;</p>
+<p>Tielke went in as a skeptic. His stated goal was to find AI's limits fast, because his clients were vibe coding replacements for ERP systems with no software background, and he wanted to stop that. So he set enterprise constraints on purpose: .NET microservices behind a Traefik API gateway, Blazor and React frontends, n8n as the workflow engine, a local Qwen model on AMD hardware acting as the brain of an office-work agent, plus full test and production environments with CI on self-hosted Gitea. This was his real accounting, invoicing and booking system, rebuilt from scratch over 4.5 months of night work.</p>
+<p>&nbsp;</p>
+<p><strong>The method, in four phases</strong></p>
+<p>&nbsp;</p>
+<p>This progression is the most useful content in the talk:</p>
+<p>&nbsp;</p>
+<p>1. <strong>Micromanagement.</strong> Prompt, generate, review every line. The way most of us work today. It doesn't scale.</p>
+<p>&nbsp;</p>
+<p>2. <strong>Quality-driven.</strong> He wrote his architecture and design guidelines into the agent's system prompt, then ran ReSharper and NDepend (880 structural rules) as a quality gate after every generation step. The key move: when output was wrong, he didn't fix the code, he fixed the harness so the mistake couldn't recur. After this phase he says he essentially stopped reading generated code.</p>
+<p>&nbsp;</p>
+<p>3. <strong>Spec-driven and test-driven.</strong> One spec document per feature as the single source of truth; the agent derives its prompts from it. Tests are generated only from the spec's acceptance criteria, never from the code, so they verify the requirement rather than the implementation.</p>
+<p>&nbsp;</p>
+<p>4. <strong>Idea and voice-driven.</strong> A nightly regenerated system prompt of about 440 pages describing the whole app, loaded into Claude on his phone. He designed his largest module during a 4.5-hour voice conversation while driving to Vienna. Claude pushed back with references to existing modules and German tax law, then produced the idea file that became the spec.</p>
+<p>&nbsp;</p>
+<p><strong>The numbers</strong></p>
+<p>&nbsp;</p>
+<p>• Effort: 45 working days solo, versus roughly 19 person-years (the average of estimates from two of his client teams, from Claude and Codex, and from his own three-day estimation exercise)<br>
+• Cost: about $25k all in. He burned 22 billion tokens, which would be $21k at Anthropic API rates but cost him about $1,600 through two Claude Max subscriptions<br>
+• Quality: 85% test coverage, 0% technical and structural debt (everything gated by the 880 NDepend rules), documentation regenerated nightly. His client teams' comparable projects average around 30% debt, 33% documentation (mostly stale) and 60% coverage</p>
+<p>&nbsp;</p>
+<p><strong>The caveats he names himself</strong></p>
+<p>&nbsp;</p>
+<p>Greenfield only; brownfield needs a different approach. He's a very experienced architect who already knew the domain and the requirements. And he tells the audience to ignore the "93x faster" headline the German press ran with: in his words, it doesn't matter whether it's 39x or 25x, it's way faster, and the quality is outstanding if you do it the right way.</p>
+<p>&nbsp;</p>
+<p><strong>What's worth stealing</strong></p>
+<p>&nbsp;</p>
+<p>The claim worth debating in our channel: code review doesn't scale with AI output volume, but harness review does. Tielke stopped inspecting output and invested in the machinery that constrains output instead. Guidelines live in the system prompt, static analysis acts as the gate, specs are the source of truth. His closing advice on where developers should invest their skills: specification writing, architecture, DevOps, testing, and harness building.</p>
+<p>&nbsp;</p>
+<p><strong>Question for the channel:</strong> I'm no expert on testing methodologies, but I expect some tests are easier to generate (unit tests), some much harder (end-to-end), and some close to impossible when you don't have access to every component of the production environment. So a question for the more experienced test automation engineers here: what mix of test types, and what level of coverage, would be enough to fully trust AI-generated code? And one more attribute that's hard to measure: how maintainable will this code still be after 6 months, or 3 years, of changes made by AI agents?</p>
+<p>&nbsp;</p>
+<p>Web version: <a href="https://ppruchnerovic.github.io/presentations/posts/ai-driven-development-tielke/">https://ppruchnerovic.github.io/presentations/posts/ai-driven-development-tielke/</a></p>
+</template>
+
+<script>
+function teamsPlainText(container) {
+  return Array.from(container.querySelectorAll('p')).map(function (p) {
+    var c = p.cloneNode(true);
+    c.querySelectorAll('br').forEach(function (b) { b.replaceWith('\n'); });
+    return c.textContent;
+  }).filter(function (s) {
+    return s.replace(/\u00a0/g, ' ').trim() !== '';
+  }).join('\n\n');
+}
+
+async function copyForTeams() {
+  var status = document.getElementById('teams-copy-status');
+  var container = document.createElement('div');
+  container.appendChild(document.getElementById('teams-post').content.cloneNode(true));
+  var html = container.innerHTML;
+  var text = teamsPlainText(container);
+  status.style.display = 'block';
+  try {
+    await navigator.clipboard.write([new ClipboardItem({
+      'text/html': new Blob([html], { type: 'text/html' }),
+      'text/plain': new Blob([text], { type: 'text/plain' })
+    })]);
+    status.textContent = 'Copied. Paste into Teams with a normal paste: bold is kept, colors are not.';
+  } catch (e) {
+    status.textContent = 'Automatic copy is not supported in this browser.';
+  }
+}
+</script>
+
+</body>
+</html>
