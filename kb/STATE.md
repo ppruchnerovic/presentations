@@ -12,7 +12,8 @@ ends and what is left.
 | Per-talk markdown | Done. Regenerated from `talks.json` on every sync. |
 | Search indexes (`build_index.py`) | Done. SQLite FTS5 + sharded browser index. |
 | CLI (`query.py`) | Done. Auto-builds the index on first use. |
-| Browser UI (`index.html`) | Done. Tested headless: search, filters, sorting, foldable abstracts, moments, pagination, shareable URLs. Ranks on passages, not just whole transcripts. Shares the site's dark palette and type — see below. |
+| Browser UI (`index.html`) | Done. Ranks on passages, not just whole transcripts. Shares the site's dark palette and type — see below. |
+| Browser UI tests (`tools/uitest/`) | Done. ~165 checks over search, filters, sorting, abstracts, moments, pagination, shareable URLs, resilience and a11y. `node run.js`. |
 | Claude Code skill | Done — `conference-talks` in the `second-brain` repo. |
 | Transcripts | Fetched via kome.ai with **estimated** timings. See below. |
 | Scheduled refresh | `.github/workflows/kb-refresh.yml`, weekly, metadata only. |
@@ -117,6 +118,15 @@ anything — the delete is the point.
   fetched lazily, one letter at a time.
   Existing `f`/`p` values are untouched by the change, so a stale `index.html`
   keeps working against a fresh index — it just ignores the third element.
+- **Hiding a control needs more than `hidden`.** `index.html` hides `#more`,
+  `.abs-more` and `#f-tr` by setting the `hidden` property, but any author rule
+  that sets `display` on one of them outranks the UA stylesheet's `[hidden]` —
+  so the element stays on screen while the script believes it is gone. This
+  shipped: a four-hit search offered "Show more (-16 left)", and a fifth of the
+  cards offered to unfold an abstract that was already complete. A
+  `[hidden] { display: none !important; }` reset now covers all three, and
+  `uitest/suite-controls.js` guards it. If you add a control the script hides,
+  you get this for free — but do not remove the reset.
 - Talks without a recording (135 of 493) are excluded by design; `--keep-all`
   overrides.
 
@@ -124,8 +134,9 @@ anything — the delete is the point.
 
 - Headless Chromium cannot reach external HTTPS through this session's egress
   proxy — the TLS ClientHello is reset on every host, `example.com` included.
-  It works fine against `localhost`, which is how the UI was tested
-  (`python3 -m http.server` + Playwright).
+  It works fine against `localhost`, which is what `tools/uitest/run.js` does —
+  it serves the repo on a free port and points Playwright at that. Passing
+  `KB_URL` to test a deployed copy therefore only works off this proxy.
 - The conference API is unauthenticated but slow: ~2.3 MB, give it a long
   timeout.
 

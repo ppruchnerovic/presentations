@@ -5,3 +5,8 @@ data/talks.db
 # Python bytecode, committed by accident once and re-committed by the weekly
 # refresh job, which runs `git add kb` after rebuilding.
 tools/__pycache__/
+
+# Playwright and its browsers, pulled in only to run the UI tests. Everything
+# under kb/ is mirrored to the gh-pages branch, so this would otherwise be
+# published alongside the site.
+tools/uitest/node_modules/

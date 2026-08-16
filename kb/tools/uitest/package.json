@@ -1,0 +1,12 @@
+{
+  "name": "kb-uitest",
+  "private": true,
+  "description": "Browser tests for the talk explorer at kb/index.html",
+  "scripts": {
+    "test": "node run.js",
+    "postinstall": "playwright install chromium"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.0"
+  }
+}

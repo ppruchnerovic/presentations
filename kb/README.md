@@ -42,7 +42,8 @@ kb/
     ├── sync_agenda.py            conference API  -> talks.json + markdown
     ├── fetch_transcripts.py      YouTube captions -> transcripts/   (run locally)
     ├── build_index.py            everything      -> talks.db + browser index
-    └── query.py                  ranked search from the terminal
+    ├── query.py                  ranked search from the terminal
+    └── uitest/                   browser tests for index.html
 ```
 
 ### Why three representations
@@ -142,6 +143,45 @@ so it will not re-fetch them otherwise.
 
 The `Refresh talk metadata` workflow keeps the metadata current automatically;
 it deliberately does not attempt transcripts.
+
+## Testing the browser UI
+
+`index.html` is one self-contained file with no build step, which makes it easy
+to change and easy to break quietly — a search that silently stops matching
+looks exactly like a search with no results.
+
+```bash
+cd kb/tools/uitest
+npm install            # playwright + chromium, ignored by git
+node run.js            # ~165 checks, about a minute
+node run.js search filters      # just those suites
+KB_URL=https://ppruchnerovic.github.io/presentations/kb/ node run.js   # the live site
+```
+
+`run.js` serves the repo on a free port, runs each suite in its own process,
+and exits non-zero if anything failed. Every check prints what it actually saw,
+so a red line tells you the story without re-instrumenting the test.
+
+| Suite | Covers |
+|---|---|
+| `load` | catalogue loads, filters built from the data, one card end to end |
+| `search` | every field, phrases, prefixes, the transcript layer, tokenising |
+| `controls` | pagination, abstract unfold, tag chips, `/` shortcut |
+| `filters` | track / type / stage, the three sorts, Reset, the shareable hash |
+| `moments` | "Find this in the talk" — ranking, deep links, caching |
+| `resilience` | missing data at each layer, hostile queries, a 390px phone |
+| `a11y` | accessible names, keyboard reach, announcements, contrast |
+| `ranking` | agreement with `query.py`, plus properties that hold regardless |
+| `navigation` | load cost, lazy shards, history, links in and out |
+
+Two things worth knowing when adding a check:
+
+* **The transcript cache is per page.** Anything asserting a cold fetch has to
+  open its own page — an earlier click in the same session has already warmed
+  it, and the assertion passes without testing anything.
+* **`ranking` skips its CLI half** when `data/talks.db` is missing, rather than
+  making `query.py` build it mid-test. Run `build_index.py` first for the full
+  set.
 
 ## Adding another event
 
