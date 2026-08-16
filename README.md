@@ -55,8 +55,8 @@ YouTube URL
 5. REVIEW GATE             deliver, commit on branch, stop.
     │                      push to main only on explicit approval
     ▼
-6. PUBLISH (optional)      copy to presentations-site, inject Copy-for-Teams
-                           button, add card, publish.sh
+6. PUBLISH (optional)      copy into a clone of this repo, inject
+                           Copy-for-Teams button, add card, push to main
 ```
 
 Two rules shape the pipeline: transcript fetching fails often, so every route
@@ -67,7 +67,12 @@ post formats first, copies `community-post.html` to `posts/<slug>/index.html`,
 runs `scripts/add_teams_button.py` to inject the floating "Copy for Teams"
 button (it copies the post as clean rich text so Teams applies its own theme),
 adds the card to `index.html` with a `Speaker · Company · ~XX min` meta line,
-and pushes with `publish.sh`.
+and commits those two paths to `main`.
+
+It publishes through an ordinary clone of this repo. The vault used to keep a
+mirror of the site under `presentations-site/` and publish it with a
+`push --force` of that folder as the repo root; the mirror is gone, and that
+approach would now delete `kb/` and `.claude/` anyway.
 
 ## The talk knowledge base (`kb/`)
 
