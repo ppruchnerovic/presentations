@@ -1,0 +1,67 @@
+name: Refresh talk metadata
+
+# Pulls the WeAreDevelopers agenda API and rebuilds the knowledge base whenever
+# the conference changes something (added recordings, retitled talks, new
+# speakers). Transcripts are deliberately NOT fetched here: YouTube blocks
+# GitHub's IP ranges, so `fetch_transcripts.py` has to run on a real machine.
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"   # Mondays, 06:17 UTC
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "kb/tools/**"
+      - ".github/workflows/kb-refresh.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kb-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Sync agenda and rebuild indexes
+        working-directory: kb/tools
+        run: |
+          python3 sync_agenda.py
+          python3 build_index.py
+
+      - name: Commit if anything changed
+        id: commit
+        run: |
+          if [ -z "$(git status --porcelain kb)" ]; then
+            echo "No changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add kb
+          git commit -m "Refresh talk knowledge base from the WeAreDevelopers API"
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      # The push above does NOT start `Deploy GitHub Pages`: GitHub suppresses
+      # workflow triggers from pushes made with the default GITHUB_TOKEN, to
+      # avoid recursive runs. So a refresh used to land in main and then sit
+      # there unpublished until somebody happened to push for another reason —
+      # up to a week of the live search serving stale data.
+      #
+      # Mirror to gh-pages here instead, which is all pages.yml does anyway.
+      # Updating gh-pages *does* publish, because GitHub's built-in Pages build
+      # is not a repository workflow and is not subject to that suppression.
+      - name: Publish the refreshed data
+        if: steps.commit.outputs.changed == 'true'
+        run: git push origin HEAD:gh-pages --force

@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WeAreDevelopers Talk Explorer</title>
+<meta name="description" content="Search every recorded talk from the WeAreDevelopers World Congress — by topic, track, speaker or what was actually said on stage.">
+<meta name="color-scheme" content="dark">
+<style>
+  /* Same design tokens as the recap pages and the site index — one palette
+     across presentations and the explorer. */
+  :root {
+    --bg: #0f1115;
+    --card: #181b22;
+    --accent: #e8b64c;
+    --text: #e6e6e6;
+    --muted: #9aa3b2;
+    --border: #262b36;
+    --chip: #20242d;
+    --accent-soft: rgba(232,182,76,0.12);
+    --accent-line: rgba(232,182,76,0.35);
+    --accent-hover: rgba(232,182,76,0.5);
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0 0 60px;
+  }
+  a { color: var(--accent); }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 20px; }
+
+  header {
+    background: linear-gradient(135deg, #14161c 0%, #1d2027 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 40px 24px 30px;
+    text-align: center;
+  }
+  .head-in { max-width: 860px; margin: 0 auto; }
+  .kicker {
+    display: inline-block;
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .kicker a { text-decoration: none; }
+  .kicker a:hover { text-decoration: underline; }
+  h1 { font-size: 1.9rem; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .sub { color: var(--muted); font-size: 0.95rem; max-width: 640px; margin: 0 auto 22px; }
+
+  .searchbar { position: relative; max-width: 640px; margin: 0 auto; text-align: left; }
+  #q {
+    width: 100%; padding: 13px 18px 13px 44px; font-size: 1rem; font-family: inherit;
+    color: var(--text); background: var(--card);
+    border: 1px solid var(--border); border-radius: 999px;
+  }
+  #q::placeholder { color: var(--muted); }
+  #q:focus {
+    outline: none; border-color: var(--accent-line);
+    box-shadow: 0 0 0 3px rgba(232,182,76,0.13);
+  }
+  .searchbar svg { position: absolute; left: 17px; top: 50%; transform: translateY(-50%);
+    width: 17px; height: 17px; fill: none; stroke: var(--muted); stroke-width: 2; }
+  .hint { margin: 10px auto 0; max-width: 640px; font-size: 0.8rem; color: var(--muted); }
+  .hint code { background: rgba(255,255,255,0.06); color: var(--accent);
+    padding: 2px 7px; border-radius: 999px; font-size: 0.75rem; }
+
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px;
+    align-items: center; justify-content: center; }
+  select, .toggle {
+    font: inherit; font-size: 0.82rem; padding: 7px 14px; color: var(--text);
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 999px; cursor: pointer;
+  }
+  select:hover, .toggle:hover { border-color: var(--accent-hover); }
+  .toggle.on { background: var(--accent-soft); border-color: var(--accent-line);
+    color: var(--accent); font-weight: 600; }
+  #clear { background: none; border: 0; color: var(--muted);
+    font: inherit; font-size: 0.82rem; cursor: pointer; text-decoration: underline; padding: 7px 4px; }
+  #clear:hover { color: var(--accent); }
+
+  /* Deliberately not uppercased like the recap meta lines: this one echoes back
+     what the visitor typed, and their query is not ours to restyle. */
+  .status { padding: 26px 0 14px; color: var(--muted); font-size: 0.85rem;
+    display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .status b { color: var(--accent); font-weight: 700; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px 22px; margin-bottom: 14px;
+    transition: border-color 0.15s ease;
+  }
+  .card:hover { border-color: var(--accent-hover); }
+  .card h2 { font-size: 1.15rem; font-weight: 600; line-height: 1.4;
+    letter-spacing: -0.01em; margin-bottom: 6px; }
+  .card h2 a { color: var(--text); text-decoration: none; }
+  .card h2 a:hover { color: var(--accent); }
+  .who { font-size: 0.88rem; color: var(--text); margin-bottom: 10px; }
+  .who .co { color: var(--muted); }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 11px; }
+  .b { font-size: 0.72rem; padding: 3px 11px; border-radius: 999px; background: var(--chip);
+    color: var(--muted); white-space: nowrap; border: 1px solid transparent; line-height: 1.5; }
+  .b.track { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .b.tag { cursor: pointer; }
+  .b.tag:hover { border-color: var(--accent-line); color: var(--accent); }
+  .absw { margin-bottom: 13px; }
+  .abs { font-size: 0.9rem; color: var(--muted); white-space: pre-wrap; }
+  /* Collapsed to a few lines; the button below only appears when there is
+     actually something hidden, which is measured after render. */
+  .abs.clamped { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4;
+    line-clamp: 4; overflow: hidden; }
+  .abs-more { display: inline-block; margin-top: 7px; border: 0; background: none;
+    font: inherit; font-size: 0.8rem; font-weight: 600; color: var(--accent); cursor: pointer; }
+  .abs-more:hover { text-decoration: underline; }
+  mark { background: rgba(232,182,76,0.24); color: #ffeaba;
+    border-radius: 3px; padding: 0 2px; }
+  .links { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.85rem; }
+  .links a { text-decoration: none; font-weight: 600; }
+  .links a:hover { text-decoration: underline; }
+
+  .moments { margin-top: 15px; border-top: 1px solid var(--border); padding-top: 14px; }
+  .moments .mo-head { font-size: 0.72rem; color: var(--accent); font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase; }
+  .mo { display: flex; gap: 12px; font-size: 0.88rem; margin-top: 11px; align-items: baseline; }
+  .mo a.ts {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 1px 12px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent);
+    font-weight: 700; font-size: 0.8rem; font-variant-numeric: tabular-nums;
+    text-decoration: none; white-space: nowrap; flex-shrink: 0;
+  }
+  .mo a.ts:hover { background: rgba(232,182,76,0.22); }
+  .mo span { color: var(--muted); }
+
+  .empty { text-align: center; padding: 54px 20px; color: var(--muted);
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); }
+  .empty h3 { color: var(--text); margin-bottom: 8px; font-size: 1.05rem; }
+  .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #more {
+    display: block; margin: 22px auto 0; padding: 10px 24px;
+    font: inherit; font-size: 0.9rem; font-weight: 700;
+    background: none; border: 1px solid var(--accent-line); border-radius: 999px;
+    color: var(--accent); cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
+  }
+  #more:hover { background: var(--accent); color: #14161c; }
+  footer { max-width: 860px; margin: 48px auto 0; padding: 0 20px;
+    color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <div class="head-in">
+    <span class="kicker"><a href="../">AI Dev Community</a> · Talk Explorer</span>
+    <h1>Search every recorded talk</h1>
+    <p class="sub" id="sub">Loading the catalogue…</p>
+    <div class="searchbar">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="q" type="search" autocomplete="off" spellcheck="false"
+             placeholder="Search topics, speakers, companies — e.g. AI driven SDLC">
+    </div>
+    <p class="hint">Searches titles, abstracts, speakers and — where available — what was actually
+      said on stage. Try <code>spec driven development</code>, <code>"code review"</code>, <code>agents</code>.</p>
+    <div class="filters">
+      <select id="f-track"><option value="">All tracks</option></select>
+      <select id="f-type"><option value="">All types</option></select>
+      <select id="f-stage"><option value="">All stages</option></select>
+      <select id="f-sort">
+        <option value="rel">Most relevant</option>
+        <option value="sched">Schedule order</option>
+        <option value="title">Title A–Z</option>
+      </select>
+      <button class="toggle" id="f-tr" type="button" hidden
+              title="Only talks whose transcript has been indexed">Transcript only</button>
+      <button id="clear" type="button">Reset</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="status" id="status"></div>
+  <div id="results"></div>
+  <button id="more" hidden>Show more</button>
+</main>
+
+<footer>
+  Data from the public WeAreDevelopers event API · rebuilt automatically ·
+  <a href="../">back to presentations</a>
+</footer>
+
+<script>
+(() => {
+'use strict';
+const PAGE = 20;
+const $ = s => document.querySelector(s);
+const el = { q: $('#q'), res: $('#results'), status: $('#status'), sub: $('#sub'), more: $('#more') };
+
+let TALKS = [], BY_ID = new Map(), MANIFEST = null, STOP = new Set(), DF = new Map();
+const SHARDS = new Map();          // letter -> {term: {f: idf, p: [[id, tf]]}}
+const TRANSCRIPTS = new Map();     // id -> parsed transcript, fetched once per talk
+let shown = PAGE, lastHits = [], reqSeq = 0, ALL_TR = false;
+
+// Talks are scheduled in Berlin; the API reports UTC. Formatting through the
+// conference's own zone beats hardcoding an offset that daylight saving moves.
+const HHMM = new Intl.DateTimeFormat('en-GB',
+  { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit', hour12: false });
+function slotOf(t) {
+  if (!t.st) return t.day ? `Day ${t.day}` : '';
+  const d = new Date(t.st);
+  return isNaN(d) ? `Day ${t.day}` : `Day ${t.day} · ${HHMM.format(d)}`;
+}
+const startedAt = t => { const d = t.st ? new Date(t.st) : null; return d && !isNaN(d) ? d.getTime() : Infinity; };
+
+const TOKEN_RE = /[a-z0-9][a-z0-9+#.\-]*/g;
+function tokenize(s) {
+  const out = [];
+  for (let t of String(s || '').toLowerCase().match(TOKEN_RE) || []) {
+    t = t.replace(/^[.\-]+|[.\-]+$/g, '');
+    if (t.length < 2 || STOP.has(t)) continue;
+    out.push(t);
+    // Also index the parts of a compound, so "spec driven" finds "spec-driven".
+    if (t.includes('-') || t.includes('.')) {
+      for (const part of t.split(/[.\-]+/)) {
+        if (part.length >= 2 && part !== t && !STOP.has(part)) out.push(part);
+      }
+    }
+  }
+  return out;
+}
+
+const esc = s => String(s == null ? '' : s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+// ---------- loading ----------
+async function boot() {
+  const meta = await fetch('data/search-meta.json').then(r => r.json());
+  TALKS = meta.talks;
+  TALKS.forEach(t => {
+    BY_ID.set(t.i, t);
+    t._hay = [t.t, t.d, (t.a || []).join(' '), (t.s || []).join(' '), (t.c || []).join(' '), t.k, t.g]
+      .join('   ').toLowerCase();
+    // Per-field token sets. Matching on tokens rather than raw substrings is what
+    // keeps a search for "rust" out of every talk with the word "trust" in it.
+    t._f = {
+      title:    new Set(tokenize(t.t)),
+      tags:     new Set(tokenize((t.a || []).join(' '))),
+      speakers: new Set(tokenize((t.s || []).join(' '))),
+      company:  new Set(tokenize((t.c || []).join(' '))),
+      track:    new Set(tokenize(t.k || '')),
+      abstract: new Set(tokenize(t.d)),
+    };
+    t._tok = new Set();
+    for (const s of Object.values(t._f)) for (const x of s) t._tok.add(x);
+  });
+  try {
+    MANIFEST = await fetch('data/tindex/_manifest.json').then(r => r.ok ? r.json() : null);
+    if (MANIFEST) STOP = new Set(MANIFEST.stopwords);
+  } catch (_) { MANIFEST = null; }
+
+  // Document frequency over the metadata, so a rare word like "sdlc" outweighs
+  // a word like "ai" that half the conference uses.
+  for (const t of TALKS) for (const tok of t._tok) DF.set(tok, (DF.get(tok) || 0) + 1);
+
+  const withTr = TALKS.filter(t => t.w > 0).length;
+  el.sub.textContent = `${TALKS.length} recorded talks` +
+    (withTr ? ` · ${withTr} full transcripts searchable` : ' · transcripts not indexed yet');
+  // "Transcript only" and the per-card "transcript" badge only say something
+  // when the coverage is partial. Every talk currently has one, so both stay
+  // hidden until a refresh brings in a talk whose captions could not be fetched.
+  ALL_TR = withTr === TALKS.length;
+  $('#f-tr').hidden = ALL_TR;
+  fillFilters();
+  readHash();
+  run();
+}
+
+function fillFilters() {
+  const opts = (sel, key) => {
+    const vals = [...new Set(TALKS.map(t => t[key]).filter(Boolean))].sort();
+    vals.forEach(v => sel.add(new Option(v, v)));
+  };
+  opts($('#f-track'), 'k'); opts($('#f-type'), 'y'); opts($('#f-stage'), 'g');
+}
+
+async function loadShards(terms) {
+  if (!MANIFEST) return;
+  const need = [...new Set(terms.map(t => {
+    const c = t[0];
+    return /[a-z]/.test(c) ? c : (/[0-9]/.test(c) ? '0' : '_');
+  }))].filter(k => MANIFEST.shards.includes(k) && !SHARDS.has(k));
+  await Promise.all(need.map(async k => {
+    try { SHARDS.set(k, await fetch(`data/tindex/${k}.json`).then(r => r.json())); }
+    catch (_) { SHARDS.set(k, {}); }
+  }));
+}
+
+function shardOf(term) {
+  const c = term[0];
+  const k = /[a-z]/.test(c) ? c : (/[0-9]/.test(c) ? '0' : '_');
+  return SHARDS.get(k);
+}
+
+// ---------- scoring ----------
+const W = { title: 9, tags: 5, speakers: 4, company: 3, track: 2, abstract: 2 };
+
+const idf = term => Math.log(1 + TALKS.length / (1 + (DF.get(term) || 0)));
+
+// Exact token hit scores full weight; a prefix hit ("agent" -> "agentic") scores
+// less. Nothing matches mid-word.
+function fieldHit(set, term) {
+  if (set.has(term)) return 1;
+  if (term.length >= 4) { for (const tok of set) if (tok.startsWith(term)) return 0.55; }
+  return 0;
+}
+
+function scoreMeta(t, terms, phrase) {
+  let s = 0;
+  const matched = new Set();
+  for (const term of terms) {
+    let hit = 0;
+    for (const [field, weight] of Object.entries(W)) hit += fieldHit(t._f[field], term) * weight;
+    if (hit) { matched.add(term); s += hit * idf(term); }
+  }
+  if (phrase && t._hay.includes(phrase)) s += 14 * Math.max(1, ...terms.map(idf));
+  return { score: s, matched };
+}
+
+// Segment indices arrive base36 delta-encoded: "2f.1.4" -> {87, 88, 92}.
+function decodePositions(s) {
+  const out = new Set();
+  if (!s) return out;
+  let cur = 0;
+  for (const part of s.split('.')) { cur += parseInt(part, 36); out.add(cur); }
+  return out;
+}
+
+// Returns id -> {score, matched:Set<term>, segs:Map<term,Set<segment>>}. The
+// matched set is what lets the caller insist every query term is actually
+// present somewhere in the talk; segs is what lets it score passages.
+function scoreTranscripts(terms) {
+  const out = new Map();
+  if (!MANIFEST) return out;
+  const { avg_doc_len: avg, doc_len: len } = MANIFEST;
+  const k1 = 1.4, b = 0.72;
+  for (const term of terms) {
+    const shard = shardOf(term);
+    if (!shard) continue;
+    // exact term, plus prefix matches so "agent" also finds "agentic"
+    const keys = shard[term] ? [term]
+      : Object.keys(shard).filter(w => w.startsWith(term)).slice(0, 12);
+    for (const key of keys) {
+      const e = shard[key];
+      const decay = key === term ? 1 : 0.45;
+      for (const [id, tf, pos] of e.p) {
+        const dl = len[id] || avg;
+        const norm = tf * (k1 + 1) / (tf + k1 * (1 - b + b * dl / avg));
+        let rec = out.get(id);
+        if (!rec) { rec = { score: 0, matched: new Set(), segs: new Map() }; out.set(id, rec); }
+        rec.score += e.f * norm * decay;
+        rec.matched.add(term);
+        if (pos) {
+          let set = rec.segs.get(term);
+          if (!set) { set = new Set(); rec.segs.set(term, set); }
+          for (const i of decodePositions(pos)) set.add(i);
+        }
+      }
+    }
+  }
+  return out;
+}
+
+// Whole-transcript BM25 cannot tell a talk that argues about "spec driven
+// development" from one that says "development" throughout and "spec" once in
+// an unrelated aside. query.py can, because it scores individual ~45s
+// segments. These weights mirror its W_SEG, and the bonus saturates at three
+// good passages so one long talk cannot run away with the ranking.
+const PASSAGE_W = 1.6;
+const NEAR_W = 0.5;
+const SATURATE = Math.log(4);
+
+function passageFactor(rec, terms) {
+  if (terms.length < 2) return 1;                 // nothing to co-occur with
+  const sets = terms.map(t => rec.segs.get(t));
+  if (sets.some(s => !s || !s.size)) return 1;    // some term is never spoken
+  sets.sort((a, b) => a.size - b.size);           // scan the rarest term
+  let together = 0, near = 0;
+  for (const i of sets[0]) {
+    if (sets.every(s => s.has(i))) together++;
+    else if (sets.every(s => s.has(i) || s.has(i - 1) || s.has(i + 1))) near++;
+  }
+  // Scattered terms are not disqualifying — about a fifth of the talks query.py
+  // ranks well never put them in one segment — so this only promotes, never
+  // demotes.
+  return 1 + PASSAGE_W * Math.min(1, Math.log1p(together) / SATURATE)
+           + NEAR_W * Math.min(1, Math.log1p(near) / SATURATE);
+}
+
+async function search(raw) {
+  const phrase = (raw.match(/"([^"]+)"/) || [])[1]?.toLowerCase() || '';
+  const terms = [...new Set(tokenize(raw.replace(/"/g, ' ')))];
+  if (!terms.length) return null;
+  await loadShards(terms);
+  const tScores = scoreTranscripts(terms);
+
+  const hits = [];
+  for (const t of TALKS) {
+    const m = scoreMeta(t, terms, phrase);
+    const tr = tScores.get(t.i);
+    // Every query term must appear somewhere — in the metadata or in what was
+    // said. Without this, one common word like "ai" pulls in the whole corpus.
+    if (!terms.every(x => m.matched.has(x) || tr?.matched.has(x))) continue;
+    // The passage bonus scales the transcript component only: a title match is
+    // already precise and should not be reweighted by what was said.
+    const total = m.score + (tr ? tr.score * 2.2 * passageFactor(tr, terms) : 0);
+    if (total > 0) hits.push({ t, score: total, fromTranscript: !!tr && m.score === 0 });
+  }
+  hits.sort((a, b) => b.score - a.score);
+  return { hits, terms, phrase };
+}
+
+// ---------- rendering ----------
+function highlight(text, terms) {
+  if (!text) return '';
+  let out = esc(text);
+  const uniq = [...new Set(terms)].filter(Boolean)
+    .sort((a, b) => b.length - a.length)
+    .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  if (!uniq.length) return out;
+  // Anchored at a word start so "rust" does not light up inside "trust"; open
+  // at the end so a prefix search still marks the stem of "agentic".
+  return out.replace(new RegExp(`\\b(${uniq.join('|')})`, 'gi'), '<mark>$1</mark>');
+}
+
+function card(hit, terms) {
+  const t = hit.t;
+  const who = (t.s || []).length
+    ? esc(t.s.join(', ')) + ((t.c || []).length ? ` <span class="co">· ${esc(t.c.join(', '))}</span>` : '')
+    : '<span class="co">No speaker listed</span>';
+  const yt = `https://www.youtube.com/watch?v=${t.u}`;
+  const slot = slotOf(t);
+  const badges = [
+    t.k ? `<span class="b track">${esc(t.k)}</span>` : '',
+    t.y ? `<span class="b">${esc(t.y)}</span>` : '',
+    t.g ? `<span class="b">${esc(t.g)}</span>` : '',
+    slot ? `<span class="b">${esc(slot)}</span>` : '',
+    t.m ? `<span class="b">${t.m} min</span>` : '',
+    t.w && !ALL_TR ? `<span class="b">transcript</span>` : '',
+    ...(t.a || []).map(x => `<span class="b tag" data-tag="${esc(x)}">#${esc(x)}</span>`)
+  ].join('');
+
+  // The whole abstract, clamped to a few lines. Whether that clamp actually
+  // hides anything depends on the rendered height, so the toggle stays hidden
+  // until markOverflow() has measured this card.
+  const abs = (t.d || '').trim()
+    ? `<div class="absw">
+         <p class="abs clamped">${highlight(t.d, terms)}</p>
+         <button class="abs-more" type="button" hidden>Show full description</button>
+       </div>`
+    : '';
+
+  return `<article class="card" data-id="${t.i}">
+    <h2><a href="${yt}" target="_blank" rel="noopener">${highlight(t.t, terms)}</a></h2>
+    <div class="who">${who}</div>
+    <div class="badges">${badges}</div>
+    ${abs}
+    <div class="links">
+      <a href="${yt}" target="_blank" rel="noopener">▶ Watch recording</a>
+      <a href="${esc(t.p)}" target="_blank" rel="noopener">Session page</a>
+      ${t.w && terms.length ? `<a href="#" class="mo-load" data-id="${t.i}">Find this in the talk</a>` : ''}
+    </div>
+    <div class="mo-slot"></div>
+  </article>`;
+}
+
+// A clamped paragraph that overflows its four lines is the only one that needs
+// an unfold control.
+function markOverflow() {
+  for (const p of el.res.querySelectorAll('.abs.clamped')) {
+    const btn = p.nextElementSibling;
+    if (btn) btn.hidden = p.scrollHeight <= p.clientHeight + 2;
+  }
+}
+
+let currentResult = null;
+
+function render(result) {
+  currentResult = result;
+  const terms = result ? result.terms : [];
+  let hits = result ? result.hits.slice() : TALKS.map(t => ({ t, score: 0 }));
+
+  const fk = $('#f-track').value, fy = $('#f-type').value, fg = $('#f-stage').value;
+  const trOnly = !$('#f-tr').hidden && $('#f-tr').classList.contains('on');
+  hits = hits.filter(h => (!fk || h.t.k === fk) && (!fy || h.t.y === fy) &&
+                          (!fg || h.t.g === fg) && (!trOnly || h.t.w > 0));
+
+  const byTitle = (a, b) => a.t.t.localeCompare(b.t.t);
+  const bySchedule = (a, b) => (startedAt(a.t) - startedAt(b.t)) || byTitle(a, b);
+  // Relevance only exists once something has been searched for; browsing the
+  // whole catalogue falls back to schedule order, and the status line says so
+  // rather than leaving the picker looking broken.
+  const sort = $('#f-sort').value;
+  const effective = sort === 'rel' && !result ? 'sched' : sort;
+  if (effective === 'title') hits.sort(byTitle);
+  else if (effective === 'sched') hits.sort(bySchedule);
+
+  lastHits = hits;
+  const nTr = hits.filter(h => h.fromTranscript).length;
+  const orderNote = sort === 'rel' && !result
+    ? ' <span>· ordered by schedule — search to rank by relevance</span>' : '';
+  el.status.innerHTML = hits.length
+    ? `<b>${hits.length}</b> talk${hits.length === 1 ? '' : 's'}` +
+      (result ? ` matching <b>${esc(el.q.value.trim())}</b>` : '') +
+      (nTr ? ` <span>· ${nTr} found only in the spoken transcript</span>` : '') +
+      orderNote
+    : '';
+
+  if (!hits.length) {
+    el.res.innerHTML = `<div class="empty"><h3>Nothing matched</h3>
+      <p>Try fewer or broader words, or reset the filters.</p></div>`;
+    el.more.hidden = true;
+    return;
+  }
+  el.res.innerHTML = hits.slice(0, shown).map(h => card(h, terms)).join('');
+  markOverflow();
+  el.more.hidden = hits.length <= shown;
+  el.more.textContent = `Show more (${hits.length - shown} left)`;
+}
+
+// ---------- transcript moments, fetched per talk on demand ----------
+async function showMoments(id, slot, terms) {
+  slot.innerHTML = '<div class="moments"><span class="spinner"></span></div>';
+  let tr = TRANSCRIPTS.get(id);
+  if (!tr) {
+    try {
+      tr = await fetch(`data/transcripts/${id}.json`).then(r => {
+        if (!r.ok) throw new Error(r.status);
+        return r.json();
+      });
+      TRANSCRIPTS.set(id, tr);
+    } catch (_) {
+      slot.innerHTML = '<div class="moments"><small>Transcript unavailable.</small></div>';
+      return;
+    }
+  }
+
+  const segs = tr.segments || [];
+  const scored = [];
+  for (let i = 0; i < segs.length; i++) {
+    // Token matching, not substring: searching "rust" must not offer up every
+    // moment where someone said "trust". Same rule the index itself uses.
+    const toks = new Set(tokenize(segs[i].text));
+    let n = 0;
+    for (const t of terms) n += fieldHit(toks, t);
+    if (n) scored.push({ i, n, start: segs[i].start });
+  }
+  if (!scored.length) {
+    slot.innerHTML = '<div class="moments"><small>None of those words are spoken in this talk.</small></div>';
+    return;
+  }
+  scored.sort((a, b) => b.n - a.n || a.start - b.start);
+  const picked = [], used = [];
+  for (const s of scored) {
+    if (picked.length >= 6) break;
+    if (used.some(u => Math.abs(u - s.start) < 60)) continue;
+    used.push(s.start); picked.push(s);
+  }
+  picked.sort((a, b) => a.start - b.start);
+
+  const vid = BY_ID.get(id).u;
+  slot.innerHTML = `<div class="moments"><div class="mo-head">Moments in the talk</div>` +
+    picked.map(s => {
+      const ctx = segs.slice(Math.max(0, s.i - 1), s.i + 2).map(x => x.text).join(' ');
+      const mm = Math.floor(s.start / 60), ss = String(Math.floor(s.start % 60)).padStart(2, '0');
+      return `<div class="mo">
+        <a class="ts" href="https://www.youtube.com/watch?v=${vid}&t=${Math.floor(s.start)}s"
+           target="_blank" rel="noopener">${mm}:${ss}</a>
+        <span>${highlight(ctx, terms)}</span></div>`;
+    }).join('') + '</div>';
+}
+
+// ---------- wiring ----------
+let timer;
+async function run() {
+  const raw = el.q.value.trim();
+  const seq = ++reqSeq;
+  const result = raw ? await search(raw) : null;
+  if (seq !== reqSeq) return;               // a newer keystroke already won
+  render(result);
+  writeHash();
+}
+
+el.q.addEventListener('input', () => { shown = PAGE; clearTimeout(timer); timer = setTimeout(run, 140); });
+['f-track', 'f-type', 'f-stage', 'f-sort'].forEach(id =>
+  $('#' + id).addEventListener('change', () => { shown = PAGE; run(); }));
+$('#f-tr').addEventListener('click', e => {
+  e.currentTarget.classList.toggle('on'); shown = PAGE; run();
+});
+$('#clear').addEventListener('click', () => {
+  el.q.value = ''; ['f-track', 'f-type', 'f-stage'].forEach(id => $('#' + id).value = '');
+  $('#f-sort').value = 'rel'; $('#f-tr').classList.remove('on'); shown = PAGE; run();
+});
+el.more.addEventListener('click', () => { shown += PAGE; render(currentResult); });
+
+// A narrower window rewraps the abstracts, so what fits in four lines changes.
+let rzTimer;
+window.addEventListener('resize', () => { clearTimeout(rzTimer); rzTimer = setTimeout(markOverflow, 150); });
+
+el.res.addEventListener('click', async e => {
+  const tag = e.target.closest('.tag');
+  if (tag) { el.q.value = tag.dataset.tag; shown = PAGE; run(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+
+  const more = e.target.closest('.abs-more');
+  if (more) {
+    const p = more.previousElementSibling;
+    const clamped = p.classList.toggle('clamped');
+    more.textContent = clamped ? 'Show full description' : 'Show less';
+    return;
+  }
+
+  const mo = e.target.closest('.mo-load');
+  if (mo) {
+    e.preventDefault();
+    const card = mo.closest('.card');
+    const slot = card.querySelector('.mo-slot');
+    const terms = currentResult ? currentResult.terms : [];
+    if (!terms.length) return;              // the link is not rendered without a query
+    // Second click hides what the first one loaded, rather than leaving the
+    // card stuck open with no way back.
+    if (slot.dataset.state) {
+      const open = slot.dataset.state === 'open';
+      slot.hidden = open;
+      slot.dataset.state = open ? 'closed' : 'open';
+      mo.textContent = open ? 'Find this in the talk' : 'Hide moments';
+      return;
+    }
+    slot.dataset.state = 'open';
+    slot.hidden = false;
+    mo.textContent = 'Hide moments';
+    showMoments(Number(card.dataset.id), slot, terms);
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && document.activeElement !== el.q) { e.preventDefault(); el.q.focus(); }
+});
+
+function writeHash() {
+  const p = new URLSearchParams();
+  if (el.q.value.trim()) p.set('q', el.q.value.trim());
+  ['track:f-track', 'type:f-type', 'stage:f-stage'].forEach(pair => {
+    const [k, id] = pair.split(':'); if ($('#' + id).value) p.set(k, $('#' + id).value);
+  });
+  if ($('#f-tr').classList.contains('on')) p.set('tr', '1');
+  if ($('#f-sort').value !== 'rel') p.set('sort', $('#f-sort').value);
+  const s = p.toString();
+  history.replaceState(null, '', s ? '#' + s : location.pathname);
+}
+function readHash() {
+  const p = new URLSearchParams(location.hash.slice(1));
+  el.q.value = p.get('q') || '';
+  if (p.get('track')) $('#f-track').value = p.get('track');
+  if (p.get('type')) $('#f-type').value = p.get('type');
+  if (p.get('stage')) $('#f-stage').value = p.get('stage');
+  if (['rel', 'sched', 'title'].includes(p.get('sort'))) $('#f-sort').value = p.get('sort');
+  if (p.get('tr') && !$('#f-tr').hidden) $('#f-tr').classList.add('on');
+}
+
+boot().catch(err => {
+  el.sub.textContent = 'Could not load the catalogue.';
+  el.res.innerHTML = `<div class="empty"><h3>Failed to load</h3><p>${esc(err.message)}</p></div>`;
+});
+})();
+</script>
+</body>
+</html>
