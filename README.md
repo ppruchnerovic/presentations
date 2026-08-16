@@ -30,17 +30,58 @@ the reason described below.
 
 Every recorded talk from the WeAreDevelopers World Congress — 358 at the last
 refresh — with abstracts, speakers, track / type / stage tags, recording links
-and full searchable transcripts. It is a self-contained corpus plus its own
+and full timestamped transcripts. It is a self-contained corpus plus its own
 tooling, and it has nothing to do with the post recaps above beyond sharing this
 repo and its Pages deployment.
 
-Three ways in:
+### The corpus, in three shapes
+
+All three are generated from the same run, so they never drift apart:
+
+- `kb/data/talks.json` / `talks.csv` — the canonical corpus, for scripts and
+  spreadsheets
+- `kb/talks/<event>/<id>-<slug>.md` — one git-diffable file per talk, for
+  humans, `grep` and coding agents
+- `kb/data/talks.db` (SQLite + FTS5), `search-meta.json` and `tindex/` — the
+  search indexes; derived, and rebuildable in seconds
+
+Transcript timings are currently **estimated** (interpolated from word
+position), because the exact route needs a non-datacenter IP — see the timing
+caveat in `kb/README.md`.
+
+### Three ways to search
 
 | | |
 |---|---|
-| Browser, nothing to install | <https://ppruchnerovic.github.io/presentations/kb/> — searches abstracts *and* what was actually said on stage, and deep-links to the second where a phrase is spoken |
-| Terminal | `cd kb/tools && python3 query.py "spec driven development"` |
-| Claude Code | the `conference-talks` skill in the `second-brain` repo |
+| **Browser**, nothing to install | <https://ppruchnerovic.github.io/presentations/kb/> — searches abstracts *and* what was actually said on stage, filters by track / type / stage, sorts by relevance / schedule / title, and deep-links to the second where a phrase is spoken. The query lives in the URL, so results are shareable |
+| **Terminal** | `cd kb/tools && python3 query.py "spec driven development"` — with `-n`, `--track`, `--type`, `--stage`, `--event`, `--no-moments` and `--json`. FTS5 syntax works (`"exact phrase"`, `OR`, `NOT`, `prefix*`), and the index builds itself on first use |
+| **Claude Code** | the `conference-talks` skill in the `second-brain` repo. It drives `query.py` and then reads the matching talk files — the right tool for *"what do different speakers think about AI-driven SDLC"*, where retrieval finds the talks and the model compares the positions |
+
+Browser and terminal both rank on passages rather than whole transcripts, so a
+multi-word query surfaces the talks that say the words *together*.
+
+### How it fits together
+
+```
+  WeAreDevelopers API                    YouTube captions
+  (public, no auth)                      (kome.ai fallback)
+         │                                      │
+         ▼                                      ▼
+   sync_agenda.py                       fetch_transcripts.py
+         │                              run on a real machine, not CI
+         │                                      │
+         ▼                                      ▼
+   data/talks.json  ─────┐          data/transcripts/<id>.json
+   data/talks.csv        │                      │
+   talks/**.md   ◄───────┴──────────────────────┘
+         │
+         ▼
+   build_index.py
+         │
+         ├──► data/talks.db (FTS5)  ──► query.py ──► terminal, Claude Code skill
+         │    derived, gitignored
+         └──► search-meta.json + tindex/  ──► kb/index.html ──► browser
+```
 
 **`kb/README.md` is the guide** — layout, how to rebuild, where the data comes
 from. `kb/STATE.md` is the build log: design decisions, dead ends, and the
