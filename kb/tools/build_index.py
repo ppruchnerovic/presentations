@@ -118,10 +118,38 @@ def shard_key(term: str) -> str:
     return "_"
 
 
+B36 = "0123456789abcdefghijklmnopqrstuvwxyz"
+
+
+def b36(n: int) -> str:
+    if n == 0:
+        return "0"
+    out = ""
+    while n:
+        n, r = divmod(n, 36)
+        out = B36[r] + out
+    return out
+
+
+def encode_positions(seg_ids: list[int]) -> str:
+    """Segment indices as base36 gaps: [3, 5, 12] -> "3.2.7".
+
+    These are what let the browser tell a talk that says the query terms inside
+    one passage from a talk that merely says each of them somewhere — which is
+    the whole difference between its ranking and query.py's.
+    """
+    prev, parts = 0, []
+    for i in seg_ids:
+        parts.append(b36(i - prev))
+        prev = i
+    return ".".join(parts)
+
+
 def build_browser_index(talks: list[dict]) -> dict:
     """Compact metadata file + sharded transcript postings for client-side search."""
     meta = []
     postings: dict[str, dict[int, int]] = collections.defaultdict(dict)
+    positions: dict[str, dict[int, list[int]]] = collections.defaultdict(dict)
     doc_len: dict[int, int] = {}
 
     for t in talks:
@@ -149,6 +177,11 @@ def build_browser_index(talks: list[dict]) -> dict:
         doc_len[t["id"]] = len(toks)
         for term, tf in collections.Counter(toks).items():
             postings[term][t["id"]] = tf
+        # Which segments each term falls in, so the browser can score passages
+        # rather than the whole transcript as one bag of words.
+        for i, s in enumerate(segs):
+            for term in set(wadkb.tokenize(s["text"])):
+                positions[term].setdefault(t["id"], []).append(i)
 
     wadkb.write_json(wadkb.SEARCH_META, {"talks": meta}, compact=True)
 
@@ -166,9 +199,11 @@ def build_browser_index(talks: list[dict]) -> dict:
         if len(docs) == 1 and max(docs.values()) < 2:
             continue  # a term used once in one talk is noise, not a search key
         idf = math.log(1 + (n_docs - len(docs) + 0.5) / (len(docs) + 0.5))
+        pos = positions.get(term, {})
         shards[shard_key(term)][term] = {
             "f": round(idf, 4),
-            "p": [[tid, tf] for tid, tf in sorted(docs.items(), key=lambda kv: -kv[1])],
+            "p": [[tid, tf, encode_positions(pos.get(tid, []))]
+                  for tid, tf in sorted(docs.items(), key=lambda kv: -kv[1])],
         }
 
     for key, terms in shards.items():

@@ -255,8 +255,18 @@ function scoreMeta(t, terms, phrase) {
   return { score: s, matched };
 }
 
-// Returns id -> {score, matched:Set<term>}. The matched set is what lets the
-// caller insist every query term is actually present somewhere in the talk.
+// Segment indices arrive base36 delta-encoded: "2f.1.4" -> {87, 88, 92}.
+function decodePositions(s) {
+  const out = new Set();
+  if (!s) return out;
+  let cur = 0;
+  for (const part of s.split('.')) { cur += parseInt(part, 36); out.add(cur); }
+  return out;
+}
+
+// Returns id -> {score, matched:Set<term>, segs:Map<term,Set<segment>>}. The
+// matched set is what lets the caller insist every query term is actually
+// present somewhere in the talk; segs is what lets it score passages.
 function scoreTranscripts(terms) {
   const out = new Map();
   if (!MANIFEST) return out;
@@ -271,17 +281,48 @@ function scoreTranscripts(terms) {
     for (const key of keys) {
       const e = shard[key];
       const decay = key === term ? 1 : 0.45;
-      for (const [id, tf] of e.p) {
+      for (const [id, tf, pos] of e.p) {
         const dl = len[id] || avg;
         const norm = tf * (k1 + 1) / (tf + k1 * (1 - b + b * dl / avg));
         let rec = out.get(id);
-        if (!rec) { rec = { score: 0, matched: new Set() }; out.set(id, rec); }
+        if (!rec) { rec = { score: 0, matched: new Set(), segs: new Map() }; out.set(id, rec); }
         rec.score += e.f * norm * decay;
         rec.matched.add(term);
+        if (pos) {
+          let set = rec.segs.get(term);
+          if (!set) { set = new Set(); rec.segs.set(term, set); }
+          for (const i of decodePositions(pos)) set.add(i);
+        }
       }
     }
   }
   return out;
+}
+
+// Whole-transcript BM25 cannot tell a talk that argues about "spec driven
+// development" from one that says "development" throughout and "spec" once in
+// an unrelated aside. query.py can, because it scores individual ~45s
+// segments. These weights mirror its W_SEG, and the bonus saturates at three
+// good passages so one long talk cannot run away with the ranking.
+const PASSAGE_W = 1.6;
+const NEAR_W = 0.5;
+const SATURATE = Math.log(4);
+
+function passageFactor(rec, terms) {
+  if (terms.length < 2) return 1;                 // nothing to co-occur with
+  const sets = terms.map(t => rec.segs.get(t));
+  if (sets.some(s => !s || !s.size)) return 1;    // some term is never spoken
+  sets.sort((a, b) => a.size - b.size);           // scan the rarest term
+  let together = 0, near = 0;
+  for (const i of sets[0]) {
+    if (sets.every(s => s.has(i))) together++;
+    else if (sets.every(s => s.has(i) || s.has(i - 1) || s.has(i + 1))) near++;
+  }
+  // Scattered terms are not disqualifying — about a fifth of the talks query.py
+  // ranks well never put them in one segment — so this only promotes, never
+  // demotes.
+  return 1 + PASSAGE_W * Math.min(1, Math.log1p(together) / SATURATE)
+           + NEAR_W * Math.min(1, Math.log1p(near) / SATURATE);
 }
 
 async function search(raw) {
@@ -298,7 +339,9 @@ async function search(raw) {
     // Every query term must appear somewhere — in the metadata or in what was
     // said. Without this, one common word like "ai" pulls in the whole corpus.
     if (!terms.every(x => m.matched.has(x) || tr?.matched.has(x))) continue;
-    const total = m.score + (tr ? tr.score * 2.2 : 0);
+    // The passage bonus scales the transcript component only: a title match is
+    // already precise and should not be reweighted by what was said.
+    const total = m.score + (tr ? tr.score * 2.2 * passageFactor(tr, terms) : 0);
     if (total > 0) hits.push({ t, score: total, fromTranscript: !!tr && m.score === 0 });
   }
   hits.sort((a, b) => b.score - a.score);
@@ -313,7 +356,9 @@ function highlight(text, terms) {
     .sort((a, b) => b.length - a.length)
     .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   if (!uniq.length) return out;
-  return out.replace(new RegExp(`(${uniq.join('|')})`, 'gi'), '<mark>$1</mark>');
+  // Anchored at a word start so "rust" does not light up inside "trust"; open
+  // at the end so a prefix search still marks the stem of "agentic".
+  return out.replace(new RegExp(`\\b(${uniq.join('|')})`, 'gi'), '<mark>$1</mark>');
 }
 
 function excerpt(text, terms, len = 260) {
@@ -401,9 +446,11 @@ async function showMoments(id, slot, terms) {
   const segs = tr.segments || [];
   const scored = [];
   for (let i = 0; i < segs.length; i++) {
-    const low = segs[i].text.toLowerCase();
+    // Token matching, not substring: searching "rust" must not offer up every
+    // moment where someone said "trust". Same rule the index itself uses.
+    const toks = new Set(tokenize(segs[i].text));
     let n = 0;
-    for (const t of terms) if (low.includes(t)) n++;
+    for (const t of terms) n += fieldHit(toks, t);
     if (n) scored.push({ i, n, start: segs[i].start });
   }
   if (!scored.length) {

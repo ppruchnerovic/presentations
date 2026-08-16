@@ -34,6 +34,8 @@ kb/
 │   ├── talks.db                  SQLite + FTS5, used by query.py
 │   ├── search-meta.json          compact metadata the browser loads up front
 │   └── tindex/                   transcript inverted index, sharded, lazy-loaded
+│                                 postings carry segment positions, so the browser
+│                                 can rank passages, not just whole transcripts
 ├── talks/<event>/<id>-<slug>.md  one readable file per talk
 └── tools/
     ├── wadkb.py                  shared helpers
@@ -61,6 +63,11 @@ three are generated from the same run.
 <https://ppruchnerovic.github.io/presentations/kb/> — type a topic, filter by
 track / type / stage, click **Find this in the talk** to jump to the exact
 seconds where a phrase is spoken.
+
+Multi-word searches rank talks that say the words *together*, in one passage,
+above talks that merely say each of them somewhere — so "spec driven
+development" finds the talks arguing about it, not every talk that says
+"development" a lot.
 
 ### From the terminal
 
