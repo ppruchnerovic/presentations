@@ -1,3 +1,7 @@
 # Derived index — rebuilt in seconds by tools/build_index.py, and it would
 # otherwise churn several MB of binary into every commit.
 data/talks.db
+
+# Python bytecode, committed by accident once and re-committed by the weekly
+# refresh job, which runs `git add kb` after rebuilding.
+tools/__pycache__/
