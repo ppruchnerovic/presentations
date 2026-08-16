@@ -96,8 +96,9 @@ timestamp, so results deep-link into the video. FTS5 syntax works:
 
 ### With Claude Code
 
-The `conference-talks` skill in the `second-brain` repo drives `query.py` and
-then reads the matching talk files, which is what you want for questions like
+The `conference-talks` skill (`.claude/skills/conference-talks/`, at the root of
+this repo, so any Claude Code session started here loads it) drives `query.py`
+and then reads the matching talk files, which is what you want for questions like
 *"what do different speakers think about AI-driven SDLC"* — retrieval finds the
 talks, the model compares the positions.
 

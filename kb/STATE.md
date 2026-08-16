@@ -14,7 +14,7 @@ ends and what is left.
 | CLI (`query.py`) | Done. Auto-builds the index on first use. |
 | Browser UI (`index.html`) | Done. Ranks on passages, not just whole transcripts. Shares the site's dark palette and type — see below. |
 | Browser UI tests (`tools/uitest/`) | Done. ~165 checks over search, filters, sorting, abstracts, moments, pagination, shareable URLs, resilience and a11y. `node run.js`. |
-| Claude Code skill | Done — `conference-talks` in the `second-brain` repo. |
+| Claude Code skill | Done — `conference-talks`, in this repo at `.claude/skills/conference-talks/`. Moved here from `second-brain` so the skill ships with the corpus it queries. |
 | Transcripts | Fetched via kome.ai with **estimated** timings. See below. |
 | Scheduled refresh | `.github/workflows/kb-refresh.yml`, weekly, metadata only. |
 

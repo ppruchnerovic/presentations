@@ -18,6 +18,8 @@ the reason described below.
 - `index.html` — landing page listing all presentations
 - `posts/<slug>/index.html` — one self-contained HTML page per talk recap
 - `kb/` — the conference talk knowledge base (see below)
+- `.claude/skills/conference-talks/` — the Claude Code skill that answers
+  questions from `kb/`; it lives here because the corpus does
 - `.nojekyll` — serve files as-is, no Jekyll processing
 
 ## Adding a new presentation
@@ -96,7 +98,7 @@ caveat in `kb/README.md`.
 |---|---|
 | **Browser**, nothing to install | <https://ppruchnerovic.github.io/presentations/kb/> — searches abstracts *and* what was actually said on stage, filters by track / type / stage, sorts by relevance / schedule / title, and deep-links to the second where a phrase is spoken. The query lives in the URL, so results are shareable |
 | **Terminal** | `cd kb/tools && python3 query.py "spec driven development"` — with `-n`, `--track`, `--type`, `--stage`, `--event`, `--no-moments` and `--json`. FTS5 syntax works (`"exact phrase"`, `OR`, `NOT`, `prefix*`), and the index builds itself on first use |
-| **Claude Code** | the `conference-talks` skill in the `second-brain` repo. It drives `query.py` and then reads the matching talk files — the right tool for *"what do different speakers think about AI-driven SDLC"*, where retrieval finds the talks and the model compares the positions |
+| **Claude Code** | the `conference-talks` skill in this repo (`.claude/skills/conference-talks/`), picked up automatically by any session started here. It drives `query.py` and then reads the matching talk files — the right tool for *"what do different speakers think about AI-driven SDLC"*, where retrieval finds the talks and the model compares the positions |
 
 Browser and terminal both rank on passages rather than whole transcripts, so a
 multi-word query surfaces the talks that say the words *together*.
