@@ -12,10 +12,38 @@ ends and what is left.
 | Per-talk markdown | Done. Regenerated from `talks.json` on every sync. |
 | Search indexes (`build_index.py`) | Done. SQLite FTS5 + sharded browser index. |
 | CLI (`query.py`) | Done. Auto-builds the index on first use. |
-| Browser UI (`index.html`) | Done. Tested headless: search, filters, sorting, foldable abstracts, moments, pagination, shareable URLs, both themes. Ranks on passages, not just whole transcripts. |
+| Browser UI (`index.html`) | Done. Tested headless: search, filters, sorting, foldable abstracts, moments, pagination, shareable URLs. Ranks on passages, not just whole transcripts. Shares the site's dark palette and type — see below. |
 | Claude Code skill | Done — `conference-talks` in the `second-brain` repo. |
 | Transcripts | Fetched via kome.ai with **estimated** timings. See below. |
 | Scheduled refresh | `.github/workflows/kb-refresh.yml`, weekly, metadata only. |
+
+## Visual design — shared with the rest of the site
+
+`index.html` deliberately carries the same tokens as `../index.html` and
+`../posts/*/index.html`. Keep them in sync if any page changes; the explorer is
+meant to read as part of the site, not as a separate tool bolted on.
+
+```
+--bg #0f1115   --card #181b22   --accent #e8b64c
+--text #e6e6e6 --muted #9aa3b2  --border #262b36
+```
+
+System font stack, `line-height: 1.6`, 860px column, 12px card radius, pill
+(`999px`) chips and buttons, gradient header (`135deg, #14161c → #1d2027`) with
+an uppercase gold kicker, and gold uppercase section labels.
+
+Two notes on where the explorer needs more than the recap pages have:
+
+- **Dark only.** The recaps have no light mode, so the explorer dropped its
+  `prefers-color-scheme` block rather than being the one page that flips.
+  `<meta name="color-scheme" content="dark">` keeps the native form controls
+  dark too.
+- **The status line is not uppercased**, unlike the recap `.meta` lines it
+  otherwise resembles. It echoes back the visitor's own query, and their text
+  is not ours to restyle.
+
+All foreground/background pairs introduced here clear WCAG AA (lowest is the
+badge text at 6.1:1).
 
 ## Transcript routes — what works from where
 
