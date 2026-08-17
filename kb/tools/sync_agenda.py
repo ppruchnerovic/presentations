@@ -22,6 +22,7 @@ import csv
 import datetime as dt
 import json
 import shutil
+import sys
 import urllib.request
 
 import wadkb
@@ -256,10 +257,43 @@ def csv_row(t: dict) -> dict:
     }
 
 
+def check_not_shrinking(n_new: int, allow_shrink: bool) -> None:
+    """Refuse to publish a corpus that suddenly lost most of its talks.
+
+    This runs unattended: kb-refresh.yml commits whatever comes out and force
+    pushes it to gh-pages. A 200 response is not the same as a good one — the
+    conference is over, so the agenda can be edited or served without
+    `recording_url` at any time, and every talk missing one is silently skipped.
+    That path was measured, not imagined: stripping `recording_url` leaves 0
+    talks, deletes all 358 markdown files and empties the index, and nothing in
+    the pipeline exits non-zero. Transcripts survive (nothing here writes to
+    data/transcripts), so the damage is recoverable with a revert — but only
+    after the live search has been serving an empty corpus.
+
+    Growth is fine; a sharp drop means the API, not the conference.
+    """
+    if allow_shrink or not wadkb.TALKS_JSON.exists():
+        return
+    try:
+        with wadkb.TALKS_JSON.open(encoding="utf-8") as f:
+            n_old = int(json.load(f).get("count") or 0)
+    except (OSError, ValueError, TypeError):
+        return
+    if not n_old or n_new >= n_old * 0.9:
+        return
+    sys.exit(
+        f"\nrefusing to overwrite: the API returned {n_new} talks with recordings, "
+        f"down from {n_old}.\nNothing was written — talks.json, the markdown and the "
+        f"index are untouched.\nIf the drop is real, rerun with --allow-shrink."
+    )
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--event-id", type=int, action="append", dest="event_ids")
     ap.add_argument("--keep-all", action="store_true", help="include talks without a recording")
+    ap.add_argument("--allow-shrink", action="store_true",
+                    help="write even if the API returned far fewer talks than last time")
     args = ap.parse_args()
 
     event_ids = args.event_ids or sorted(EVENTS)
@@ -277,6 +311,7 @@ def main() -> None:
         print(f"  {event.get('name')} (event {eid}): {len(event.get('sessions', []))} sessions")
 
     talks.sort(key=lambda t: (t["event_id"], t["starts_at"] or "", t["id"]))
+    check_not_shrinking(len(talks), args.allow_shrink)
 
     wadkb.write_json(
         wadkb.TALKS_JSON,

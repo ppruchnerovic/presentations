@@ -160,6 +160,18 @@ python3 sync_agenda.py && python3 build_index.py
   fetched lazily, one letter at a time.
   Existing `f`/`p` values are untouched by the change, so a stale `index.html`
   keeps working against a fresh index — it just ignores the third element.
+- **`sync_agenda.py` refuses to shrink the corpus by more than 10%.** The
+  refresh workflow runs unattended: it commits whatever the pipeline produces
+  and force pushes it to `gh-pages`. A 200 from the agenda API is not the same
+  as a good answer — the conference is over, so sessions can lose
+  `recording_url` at any time, and every talk without one is silently skipped.
+  Measured on a scratch copy: stripping `recording_url` yields 0 talks, deletes
+  all 358 markdown files (`main()` rmtrees `kb/talks/` and rebuilds it) and
+  empties the index, and *nothing exits non-zero* — the workflow would have
+  published it. Transcripts are never at risk (nothing outside
+  `fetch_transcripts.py` writes to `data/transcripts/`), so a revert restores
+  everything, but only after the live search has served an empty corpus.
+  `--allow-shrink` is the escape hatch when a drop is real.
 - **Passages are cut at index time, not by whoever fetched the transcript.**
   `build_index.py` groups consecutive captions into ~28-word passages
   (`PASSAGE_WORDS`) before indexing; each keeps its first caption's start.
