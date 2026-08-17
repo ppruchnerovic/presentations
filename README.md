@@ -141,6 +141,28 @@ from. `kb/STATE.md` is the build log: design decisions, dead ends, and the
 transcript routes that do and do not work from a cloud container. Read STATE.md
 before changing anything in `kb/tools/`.
 
+### Building the same thing for another conference
+
+`kb/` is one corpus, but the machinery that fills it is not specific to one
+conference. The `conference-transcripts` skill generalises `kb/tools/`: point it
+at a YouTube playlist or channel and it enumerates the talks, filters out
+trailers and livestream re-runs, and fetches captions with exact timings —
+pacing itself against YouTube's per-IP quota and resuming where a block stopped
+it.
+
+```bash
+S=.claude/skills/conference-transcripts/scripts
+python3 $S/list_videos.py "<playlist-url>" --min-duration 300 -o videos.json
+python3 $S/fetch_transcripts.py --from videos.json --out transcripts/ \
+    --source exact --retry-after 20
+```
+
+Its `SKILL.md` carries the operational knowledge, which is the part that took a
+day to learn: why the limit is a per-IP allowance that refills over hours rather
+than a rate you can slow down under, why a block must never be recorded as a
+missing transcript, and why captions have to be grouped into ~28-word passages
+before indexing.
+
 ### Refreshing the data
 
 The `Refresh talk metadata` workflow (`.github/workflows/kb-refresh.yml`) pulls
@@ -162,7 +184,8 @@ Two things the refresh deliberately does **not** do:
 - **Fetch transcripts.** YouTube blocks GitHub's IP ranges, so
   `kb/tools/fetch_transcripts.py` has to run on a real machine — and even there,
   a per-IP quota limits how many land per sitting. See the timing notes in
-  `kb/README.md`.
+  `kb/README.md`, and the `conference-transcripts` skill for the same fetcher
+  generalised to any conference channel.
 - **Commit `kb/data/talks.db`.** It is derived, rebuilds in seconds, and is
   gitignored so it does not push megabytes of churning binary into every weekly
   commit. The browser index (`search-meta.json`, `tindex/`) *is* committed,
