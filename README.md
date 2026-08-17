@@ -136,12 +136,14 @@ from. `kb/STATE.md` is the build log: design decisions, dead ends, and the
 transcript routes that do and do not work from a cloud container. Read STATE.md
 before changing anything in `kb/tools/`.
 
-### What runs on its own
+### Refreshing the data
 
 The `Refresh talk metadata` workflow (`.github/workflows/kb-refresh.yml`) pulls
-the conference API every Monday at 06:17 UTC, rebuilds the search indexes, and
-commits to `main` if the conference changed anything, then mirrors to
-`gh-pages` itself so the live search updates the same minute.
+the conference API, rebuilds the search indexes, and commits to `main` if the
+conference changed anything, then mirrors to `gh-pages` itself so the live
+search updates the same minute. It used to run on a weekly cron, but the
+conference is over, so now it only runs when triggered manually from the
+Actions tab (or on pushes touching `kb/tools/`).
 
 That last step looks redundant next to `Deploy GitHub Pages` and is not: a push
 made with the default `GITHUB_TOKEN` does not start another workflow, because
