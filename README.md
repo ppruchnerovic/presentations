@@ -93,9 +93,10 @@ All three are generated from the same run, so they never drift apart:
 - `kb/data/talks.db` (SQLite + FTS5), `search-meta.json` and `tindex/` — the
   search indexes; derived, and rebuildable in seconds
 
-Transcript timings are currently **estimated** (interpolated from word
-position), because the exact route needs a non-datacenter IP — see the timing
-caveat in `kb/README.md`.
+Transcript timings are **exact** — every one of the 358 comes from YouTube's
+own caption timings, so a search hit deep-links to the second the phrase is
+spoken. Getting there needs a non-datacenter IP and some patience with YouTube's
+per-IP quota; see the timing notes in `kb/README.md`.
 
 ### Three ways to search
 
@@ -155,8 +156,9 @@ mirror step when editing that workflow.
 Two things the refresh deliberately does **not** do:
 
 - **Fetch transcripts.** YouTube blocks GitHub's IP ranges, so
-  `kb/tools/fetch_transcripts.py` has to run on a real machine. See the timing
-  caveat in `kb/README.md`.
+  `kb/tools/fetch_transcripts.py` has to run on a real machine — and even there,
+  a per-IP quota limits how many land per sitting. See the timing notes in
+  `kb/README.md`.
 - **Commit `kb/data/talks.db`.** It is derived, rebuilds in seconds, and is
   gitignored so it does not push megabytes of churning binary into every weekly
   commit. The browser index (`search-meta.json`, `tindex/`) *is* committed,

@@ -386,8 +386,8 @@ function scoreTranscripts(terms) {
 
 // Whole-transcript BM25 cannot tell a talk that argues about "spec driven
 // development" from one that says "development" throughout and "spec" once in
-// an unrelated aside. query.py can, because it scores individual ~45s
-// segments. These weights mirror its W_SEG, and the bonus saturates at three
+// an unrelated aside. query.py can, because it scores individual ~28-word
+// passages. These weights mirror its W_SEG, and the bonus saturates at three
 // good passages so one long talk cannot run away with the ranking.
 const PASSAGE_W = 1.6;
 const NEAR_W = 0.5;

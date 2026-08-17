@@ -15,7 +15,7 @@ ends and what is left.
 | Browser UI (`index.html`) | Done. Ranks on passages, not just whole transcripts. Shares the site's dark palette and type — see below. |
 | Browser UI tests (`tools/uitest/`) | Done. ~165 checks over search, filters, sorting, abstracts, moments, pagination, shareable URLs, resilience and a11y. `node run.js`. |
 | Claude Code skill | Done — `conference-talks`, in this repo at `.claude/skills/conference-talks/`. Moved here from `second-brain` so the skill ships with the corpus it queries. |
-| Transcripts | Fetched via kome.ai with **estimated** timings. See below. |
+| Transcripts | All 358 fetched with **exact** timings via `youtube-transcript-api`. See below. |
 | Scheduled refresh | `.github/workflows/kb-refresh.yml`, weekly, metadata only. |
 
 ## Visual design — shared with the rest of the site
@@ -71,17 +71,59 @@ segment's start from its word position across the runtime and marks the
 transcript `"timing": "estimated"`. Text is verbatim; only the offsets are
 approximate — expect to land within a sentence or two of a quote.
 
-**To upgrade to exact timings**, from a home connection:
+The corpus has since been re-fetched end to end from ordinary connections, so
+every transcript now carries `"timing": "exact"` and `"source": "yt"`. kome.ai
+stays in the script as the fallback for anything that must run where YouTube is
+blocked.
+
+### The limit is a per-IP quota, not a rate limit
+
+This is the part that cost a day, so it is written down.
+
+| Egress | Fetched before the block |
+|---|---|
+| Corporate NAT (Zscaler) | 235, then 52 in a later sitting |
+| Residential ISP | 25 |
+| Mobile carrier | 22 |
+
+Slowing down does not help. The 235-talk run used four *unpaced* workers
+(~40 req/min); a later run at two paced workers (~24 req/min) stopped at 25.
+What is metered is an allowance per egress IP that refills over hours, and both
+exact routes draw on the same one — yt-dlp is a fallback for a *refusal*, not
+for an exhausted quota.
+
+Corporate NAT addresses front many users and carry a correspondingly larger
+allowance, which is the one case where a datacenter-ish IP does better, provided
+it is not already flagged. Recovery is slow and uneven: a carrier IP was still
+blocked after ~2.5 hours, while the corporate one came back in about two.
+
+Hence `--retry-after MINUTES`, which parks the run and resumes where it stopped;
+each round re-derives its work from disk, so a blocked round costs only time.
+A block is **not** written to `_misses.json` — that file means "this video has
+no captions". Keeping the two apart is what lets a plain rerun collect
+everything a block skipped.
+
+Probe before restarting a parked run; one request is enough to tell whether the
+current network is worth spending a round on.
+
+### The official API is a dead end
+
+Do not reach for the YouTube Data API. `captions.download` requires OAuth *and*
+permission to edit the video, so third-party talks return 403; and at 200 quota
+units against a 10,000/day default it would cap at 50 transcripts a day even if
+permission existed. The `timedtext` endpoint these routes use is undocumented,
+so there is no published limit to tune against and no quota-extension form that
+applies to it.
+
+**To re-fetch specific talks**, delete them first — the script skips talks it
+already has, so the delete is the point:
 
 ```bash
 cd kb/tools
 rm -rf ../data/transcripts          # or just the ids you want redone
-python3 fetch_transcripts.py --source youtube
+python3 fetch_transcripts.py --source exact --retry-after 20
 python3 sync_agenda.py && python3 build_index.py
 ```
-
-The script skips talks it already has, so an in-place rerun will *not* upgrade
-anything — the delete is the point.
 
 ## Design decisions worth not relitigating
 
@@ -118,6 +160,20 @@ anything — the delete is the point.
   fetched lazily, one letter at a time.
   Existing `f`/`p` values are untouched by the change, so a stale `index.html`
   keeps working against a fresh index — it just ignores the third element.
+- **Passages are cut at index time, not by whoever fetched the transcript.**
+  `build_index.py` groups consecutive captions into ~28-word passages
+  (`PASSAGE_WORDS`) before indexing; each keeps its first caption's start.
+  Both rankers make a segment the unit that two query terms must share, so
+  segment size silently decides what counts as "said together". kome.ai
+  returned ~27-word chunks; YouTube's captions arrive as ~6-word lines, which
+  quietly broke that contract — "spec driven development" is spoken across
+  three caption lines and so matched none of them, and `query.py` went from
+  8 hits to 6. Re-grouping restored the CLI's pre-upgrade ranking exactly on
+  three of five sampled queries and as a set on the fourth. Do not remove this
+  in favour of raw captions: it is what keeps ranking independent of the fetch
+  route. Deep links are unaffected — the browser reads
+  `data/transcripts/<id>.json` directly, so a moment still points at the
+  caption, not at the start of its passage.
 - **Hiding a control needs more than `hidden`.** `index.html` hides `#more`,
   `.abs-more` and `#f-tr` by setting the `hidden` property, but any author rule
   that sets `display` on one of them outranks the UA stylesheet's `[hidden]` —
@@ -149,7 +205,7 @@ anything — the delete is the point.
   `segments` is already the right granularity.
 Previously listed here and now done: the static site ranked whole talks by
 transcript relevance worse than the CLI, because it scored each transcript as
-one bag of words while `query.py` scores individual ~45s segments. A talk that
+one bag of words while `query.py` scores individual ~28-word passages. A talk that
 said "development" throughout and "spec" once in an unrelated aside scored as
 well as one arguing about spec-driven development. `index.html` now reads the
 segment positions described above and applies a saturating co-occurrence bonus

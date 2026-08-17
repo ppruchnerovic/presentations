@@ -42,7 +42,7 @@ L.suite('ranking', async browser => {
       await L.search(page, q);
       const web = (await L.cardIds(page)).slice(0, 10);
       const overlap = web.filter(i => cli.includes(i)).length;
-      // The CLI's segment query needs every term inside one ~45s segment, so on
+      // The CLI's segment query needs every term inside one ~28-word passage, so on
       // a sparse query it finds a handful of rows and the browser legitimately
       // finds more. Judge the overlap against what the CLI actually returned.
       L.check(`"${q}": the web top 10 agrees with the CLI`,

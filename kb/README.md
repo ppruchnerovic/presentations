@@ -30,12 +30,14 @@ kb/
 ├── data/
 │   ├── talks.json                canonical corpus — the source of truth
 │   ├── talks.csv                 same thing for spreadsheets
-│   ├── transcripts/<id>.json     timestamped segments, one file per talk
+│   ├── transcripts/<id>.json     exact caption timings, one file per talk
 │   ├── talks.db                  SQLite + FTS5, used by query.py
 │   ├── search-meta.json          compact metadata the browser loads up front
 │   └── tindex/                   transcript inverted index, sharded, lazy-loaded
-│                                 postings carry segment positions, so the browser
+│                                 postings carry passage positions, so the browser
 │                                 can rank passages, not just whole transcripts
+│                                 (captions are grouped into ~28-word passages
+│                                 at index time — see STATE.md)
 ├── talks/<event>/<id>-<slug>.md  one readable file per talk
 └── tools/
     ├── wadkb.py                  shared helpers
@@ -114,33 +116,41 @@ python3 build_index.py        # rebuild both search indexes
 `sync_agenda.py` and `build_index.py` are idempotent — rerunning gives byte-identical
 output, so a git diff shows exactly what the conference changed.
 
-### Transcripts, and the timing caveat
+### Transcripts, and YouTube's quota
 
-`fetch_transcripts.py` tries two routes:
+All 358 transcripts carry **exact** timings, so a search hit deep-links to the
+second a phrase is spoken. `fetch_transcripts.py` tries three routes:
 
 | Route | Timing | Works from |
 |---|---|---|
 | `youtube-transcript-api` | **exact** — deep links land on the second | only un-flagged IPs, in practice a home connection |
+| `yt-dlp` | **exact** — a different Innertube client, so it sometimes gets through when the first is refused | same |
 | `kome.ai` | **estimated** — interpolated from word position | anywhere, including CI and cloud containers |
 
-YouTube blocks datacenter IP ranges (`429` / *"Sign in to confirm you're not a
-bot"*), so anything running in the cloud falls back to kome.ai. Estimated starts
-land you *near* a quote — good enough to find the passage, off by roughly a
-sentence or two. Every transcript records which it is in its `timing` field.
-
 ```bash
-pip install youtube-transcript-api
-cd kb/tools && python3 fetch_transcripts.py
+pip install -r tools/requirements.txt
+cd kb/tools && python3 fetch_transcripts.py --source exact --retry-after 20
 ```
 
-It is resumable — stop it with Ctrl-C and rerun. Talks whose video has no
-captions are recorded in `data/transcripts/_misses.json` so they are not retried
-forever; `--retry-misses` forces another attempt. Then rerun `sync_agenda.py`
-(to inline transcripts into the markdown) and `build_index.py`, and commit.
+`--source exact` refuses to fall back to estimates; `--retry-after` parks the
+run when YouTube blocks the IP and resumes where it stopped.
 
-**To upgrade estimated timings to exact ones**, delete the transcripts you want
-redone and rerun from a home connection — the script skips talks it already has,
-so it will not re-fetch them otherwise.
+**Expect to be rate limited.** YouTube meters the caption endpoint per egress IP
+with an allowance that refills over hours, and both exact routes draw on the
+same one. In practice a consumer connection yields ~20–25 talks before it closes;
+slowing down does not raise that number. Fetching the whole corpus took several
+sittings across three networks. Switching networks buys a fresh window, and a
+one-request probe tells you whether the current one is worth a round.
+
+A block is **not** recorded as a miss — it says nothing about the video, so a
+plain rerun picks those talks straight back up. `data/transcripts/_misses.json`
+means "this video has no captions"; `--retry-misses` forces another attempt.
+
+The run is resumable in every direction: stop it with Ctrl-C, change networks,
+rerun. It skips talks it already has — which also means an in-place rerun will
+not *upgrade* anything. To redo a talk, delete its file first. Afterwards rerun
+`sync_agenda.py` (to inline transcripts into the markdown) and `build_index.py`,
+and commit.
 
 The `Refresh talk metadata` workflow keeps the metadata current automatically;
 it deliberately does not attempt transcripts.

@@ -10,3 +10,7 @@ tools/__pycache__/
 # under kb/ is mirrored to the gh-pages branch, so this would otherwise be
 # published alongside the site.
 tools/uitest/node_modules/
+
+# Virtualenv for fetch_transcripts.py's one dependency, on distros where pip
+# refuses to install into the system Python. Same mirroring reason as above.
+tools/.venv/

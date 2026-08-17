@@ -59,12 +59,44 @@ CREATE VIRTUAL TABLE segments_fts USING fts5(
 """
 
 
+# Both rankers treat a segment as the unit two query terms have to share, so
+# how finely a transcript is cut decides what counts as "said together". That
+# has to be a property of the index, not of whichever route fetched the
+# transcript: YouTube's captions arrive as ~6-word lines, where "spec driven
+# development" is spoken across three of them and matches none. Grouping them
+# back into ~27-word passages restores the granularity the weights were tuned
+# against. Deep links are unaffected — the browser reads the raw caption files.
+PASSAGE_WORDS = 25
+
+
+def to_passages(segs: list[dict]) -> list[dict]:
+    """Group consecutive captions into ~PASSAGE_WORDS-word passages.
+
+    Each passage keeps the start of its first caption, so a hit still points
+    into the video; already-coarse segments pass through one per passage.
+    """
+    out: list[dict] = []
+    texts: list[str] = []
+    start, words = 0.0, 0
+    for s in segs:
+        if not texts:
+            start = s["start"]
+        texts.append(s["text"])
+        words += len(s["text"].split())
+        if words >= PASSAGE_WORDS:
+            out.append({"start": start, "text": " ".join(texts)})
+            texts, words = [], 0
+    if texts:
+        out.append({"start": start, "text": " ".join(texts)})
+    return out
+
+
 def transcript_text(talk_id: int) -> tuple[str, list[dict], int]:
     tr = wadkb.load_transcript(talk_id)
     if not tr:
         return "", [], 0
     segs = tr.get("segments", [])
-    return " ".join(s["text"] for s in segs), segs, tr.get("word_count", 0)
+    return " ".join(s["text"] for s in segs), to_passages(segs), tr.get("word_count", 0)
 
 
 def build_sqlite(talks: list[dict]) -> tuple[int, int]:

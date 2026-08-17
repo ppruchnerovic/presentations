@@ -1,3 +1,8 @@
-# Only fetch_transcripts.py needs a third-party package. sync_agenda.py,
+# Only fetch_transcripts.py needs third-party packages. sync_agenda.py,
 # build_index.py and query.py run on the standard library alone.
 youtube-transcript-api>=1.0
+
+# Second exact-timing route. It reaches the caption track through a different
+# Innertube client, so it sometimes works when the API route is refused;
+# optional, and the fetch degrades to the other routes without it.
+yt-dlp>=2025.1.1
