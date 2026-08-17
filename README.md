@@ -103,7 +103,7 @@ caveat in `kb/README.md`.
 |---|---|
 | **Browser**, nothing to install | <https://ppruchnerovic.github.io/presentations/kb/> — searches abstracts *and* what was actually said on stage, filters by track / type / stage, sorts by relevance / schedule / title, and deep-links to the second where a phrase is spoken. The query lives in the URL, so results are shareable |
 | **Terminal** | `cd kb/tools && python3 query.py "spec driven development"` — with `-n`, `--track`, `--type`, `--stage`, `--event`, `--no-moments` and `--json`. FTS5 syntax works (`"exact phrase"`, `OR`, `NOT`, `prefix*`), and the index builds itself on first use |
-| **Claude Code** | the `conference-talks` skill in this repo (`.claude/skills/conference-talks/`), picked up automatically by any session started here. It drives `query.py` and then reads the matching talk files — the right tool for *"what do different speakers think about AI-driven SDLC"*, where retrieval finds the talks and the model compares the positions |
+| **Claude Code** | the `conference-talks` skill in this repo (`.claude/skills/conference-talks/`), picked up automatically by any session started here. It drives `query.py` and then reads the matching talk files — the right tool for *"what do different speakers think about AI-driven SDLC"*, where retrieval finds the talks and the model compares the positions. Also works out of the box with GitHub Copilot CLI, which picks up the same skill format |
 
 Browser and terminal both rank on passages rather than whole transcripts, so a
 multi-word query surfaces the talks that say the words *together*.
