@@ -20,6 +20,10 @@ the reason described below.
 - `kb/` — the conference talk knowledge base (see below)
 - `.claude/skills/conference-talks/` — the Claude Code skill that answers
   questions from `kb/`; it lives here because the corpus does
+- `.claude/skills/conference-transcripts/` — the skill that *builds* a corpus
+  like `kb/`: enumerates a conference's YouTube playlist and fetches captions
+  without getting the IP blocked. Generalised from `kb/tools/`, so it works on
+  any conference channel
 - `.nojekyll` — serve files as-is, no Jekyll processing
 
 ## Adding a new presentation
