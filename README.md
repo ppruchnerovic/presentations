@@ -10,8 +10,8 @@ Both are published via GitHub Pages.
 GitHub Pages serves the `gh-pages` branch. On every push to `main`, the
 `Deploy GitHub Pages` workflow (`.github/workflows/pages.yml`) mirrors `main`
 into `gh-pages`, so the site redeploys automatically — never edit `gh-pages`
-directly — the one workflow that does is the weekly knowledge base refresh, for
-the reason described below.
+directly — the one workflow that does is the knowledge base refresh, for the
+reason described below.
 
 ## Structure
 
@@ -68,10 +68,10 @@ has a fallback, and nothing reaches `main` until a human has read the post.
 
 Step 6 is what fills this repo. It adds the `Web version:` link to all three
 post formats first, copies `community-post.html` to `posts/<slug>/index.html`,
-runs `scripts/add_teams_button.py` to inject the floating "Copy for Teams"
-button (it copies the post as clean rich text so Teams applies its own theme),
-adds the card to `index.html` with a `Speaker · Company · ~XX min` meta line,
-and commits those two paths to `main`.
+runs the vault's `scripts/add_teams_button.py` to inject the floating "Copy for
+Teams" button (it copies the post as clean rich text so Teams applies its own
+theme), adds the card to `index.html` with a `Speaker · Company · ~XX min` meta
+line, and commits those two paths to `main`.
 
 It publishes through an ordinary clone of this repo. The vault used to keep a
 mirror of the site under `presentations-site/` and publish it with a
@@ -145,14 +145,16 @@ before changing anything in `kb/tools/`.
 
 `kb/` is one corpus, but the machinery that fills it is not specific to one
 conference. The `conference-transcripts` skill generalises `kb/tools/`: point it
-at a YouTube playlist or channel and it enumerates the talks, filters out
-trailers and livestream re-runs, and fetches captions with exact timings —
-pacing itself against YouTube's per-IP quota and resuming where a block stopped
-it.
+at a YouTube playlist or channel and it enumerates the talks — give it
+`--min-duration` and `--exclude` and it drops the trailers, stings and
+livestream re-runs a conference channel mixes in — then fetches captions with
+exact timings, pacing itself against YouTube's per-IP quota and resuming where a
+block stopped it.
 
 ```bash
 S=.claude/skills/conference-transcripts/scripts
-python3 $S/list_videos.py "<playlist-url>" --min-duration 300 -o videos.json
+python3 $S/list_videos.py "<playlist-url>" \
+    --min-duration 300 --exclude 'trailer|teaser|livestream' -o videos.json
 python3 $S/fetch_transcripts.py --from videos.json --out transcripts/ \
     --source exact --retry-after 20
 ```
@@ -187,6 +189,6 @@ Two things the refresh deliberately does **not** do:
   `kb/README.md`, and the `conference-transcripts` skill for the same fetcher
   generalised to any conference channel.
 - **Commit `kb/data/talks.db`.** It is derived, rebuilds in seconds, and is
-  gitignored so it does not push megabytes of churning binary into every weekly
+  gitignored so it does not push megabytes of churning binary into every refresh
   commit. The browser index (`search-meta.json`, `tindex/`) *is* committed,
   because Pages can only serve files that exist in the repo.
