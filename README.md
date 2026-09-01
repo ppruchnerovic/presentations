@@ -107,11 +107,19 @@ per-IP quota; see the timing notes in `kb/README.md`.
 | | |
 |---|---|
 | **Browser**, nothing to install | <https://ppruchnerovic.github.io/presentations/kb/> — searches abstracts *and* what was actually said on stage, filters by track / type / stage, sorts by relevance / schedule / title, and deep-links to the second where a phrase is spoken. The query lives in the URL, so results are shareable |
-| **Terminal** | `cd kb/tools && python3 query.py "spec driven development"` — with `-n`, `--track`, `--type`, `--stage`, `--event`, `--no-moments` and `--json`. FTS5 syntax works (`"exact phrase"`, `OR`, `NOT`, `prefix*`), and the index builds itself on first use |
-| **Claude Code** | the `conference-talks` skill in this repo (`.claude/skills/conference-talks/`), picked up automatically by any session started here. It drives `query.py` and then reads the matching talk files — the right tool for *"what do different speakers think about AI-driven SDLC"*, where retrieval finds the talks and the model compares the positions. Also works out of the box with GitHub Copilot CLI, which picks up the same skill format |
+| **Terminal** | `cd kb/tools && python3 query.py "spec driven development"` — with `-n`, `--track`, `--type`, `--stage`, `--event`, `--no-moments`, `--json`, `--brief` and `--ids`. FTS5 syntax works (`"exact phrase"`, `OR`, `NOT`, `prefix*`), and the index builds itself on first use. Then `query.py … --ids \| xargs python3 excerpt.py -q "…"` prints, for each talk, its opening and the passages that matched rather than the whole transcript |
+| **Claude Code** | the `conference-talks` skill in this repo (`.claude/skills/conference-talks/`), picked up automatically by any session started here. It drives `query.py` and then `excerpt.py` — the right tool for *"what do different speakers think about AI-driven SDLC"*, where retrieval finds the talks and the passages, and the model compares the positions. Also works out of the box with GitHub Copilot CLI, which picks up the same skill format |
 
 Browser and terminal both rank on passages rather than whole transcripts, so a
 multi-word query surfaces the talks that say the words *together*.
+
+The passage is also the unit a model should *read*. A talk file averages 28 KB —
+about 7,000 tokens — so eight of them opened whole is ~60k tokens before the
+model has thought about anything, and most of it is the parts of the talk that
+have nothing to do with the question. `excerpt.py` hands back what the ranker
+already found: measured over eight topics and 43 talks, 138 of 138
+search-ranked moments land inside the excerpt, on 20% of the words, for ~8k
+tokens instead of ~60k.
 
 ### How it fits together
 
@@ -131,8 +139,8 @@ multi-word query surfaces the talks that say the words *together*.
          ▼
    build_index.py
          │
-         ├──► data/talks.db (FTS5)  ──► query.py ──► terminal, Claude Code skill
-         │    derived, gitignored
+         ├──► data/talks.db (FTS5)  ──► query.py ──► excerpt.py ──► terminal,
+         │    derived, gitignored                                 Claude Code skill
          └──► search-meta.json + tindex/  ──► kb/index.html ──► browser
 ```
 

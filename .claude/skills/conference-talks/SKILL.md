@@ -25,70 +25,93 @@ kb/data/talks.json          canonical records (358 talks with recordings)
 kb/data/transcripts/<id>.json   timestamped transcript segments, one per talk
 kb/data/talks.db            SQLite FTS5 index — the thing you actually query
 kb/talks/<event>/<id>-<slug>.md  one readable file per talk
-kb/tools/query.py           ranked search over both layers
+kb/tools/query.py           ranked search: which talks to open
+kb/tools/excerpt.py         the parts of those talks that bear on the question
 ```
-
-## How to answer
 
 **Always retrieve before answering. Never answer from memory** — you do not
 know this conference's content, and inventing a speaker's position is the one
 failure mode that makes this KB worthless.
 
-### 1. Retrieve
+Two commands, in this order. Every command runs from the repo root; the tools
+resolve their own paths, so there is nothing to `cd` into.
+
+## 1. `query.py --brief` — choose the talks
 
 ```bash
-python3 kb/tools/query.py "spec driven development" -n 12 --json
+python3 kb/tools/query.py "spec driven development" -n 12 --brief
 ```
 
-Every command here runs from the repo root; the tools resolve their own paths,
-so there is nothing to `cd` into.
-
-`--json` gives you, per hit: `id`, title, speakers, companies, track, type,
-stage, tags, `duration_min`, `recording_url`, `video_id`, `session_page`,
-`has_transcript`, `abstract_snippet`, and `moments` — timestamped transcript
-hits, each with an exact float `start`. `abstract_snippet` is `""` whenever the
-hit came from the transcript layer only: that means the query did not match the
-abstract, **not** that the talk has none. Every talk has an abstract; it lives
-in the talk's markdown (step 2).
+`--brief` gives you what choosing needs and nothing else: id, title, speakers,
+track, duration, recording link, `has_transcript`, the abstract snippet and two
+timestamped transcript moments. Add `--json` for the same fields machine-
+readable. Plain `--json` returns the full record — tags, companies, stage, type,
+`session_page` — and is worth the bytes only when the question is *about* those
+fields.
 
 Useful flags: `--track "AI Agents"`, `--type Keynote/Talk`, `--stage "Stage 1"`,
-`-n 25`, `--no-moments`. (`--event` exists too, but this corpus holds one
-event.) FTS5 syntax works: `"exact phrase"`, `OR`, `NOT`, `prefix*` — with
-porter stemming, so the phrase `"quantum computing"` legitimately matches a
-passage saying "quantum computers". Phrase search is stem-based, not literal.
+`-n 25`, `--no-moments`, `--ids`. (`--event` exists too, but this corpus holds
+one event.) FTS5 syntax works: `"exact phrase"`, `OR`, `NOT`, `prefix*` — with
+porter stemming, so `"quantum computing"` legitimately matches a passage saying
+"quantum computers". Phrase search is stem-based, not literal.
 
-**Run several queries with different vocabulary rather than one.** This is the
-highest-leverage habit here, and it rescues narrow questions as much as broad
-ones — a bare two-word query ANDs its terms across unrelated talks. `agent
-security` ranks the obviously on-topic talk ("The day the chatbot asked for
-sudo") only 6th, behind generic security talks and generic agent talks. Asking
-again in the domain's own vocabulary fixes it at once: `identity for agents`
-puts that talk 1st and `prompt injection` puts it 3rd, while `guardrails` and
-`agentic trust boundaries` surface the neighbouring talks that actually answer
-the question. Fan out the same way on a broad question: for AI-driven SDLC try
-`sdlc`, `spec driven development`, `coding agents workflow`,
-`ai assisted delivery`, `verification`, `code review agents`. Union the results.
-
-### 2. Read the full record
-
-`query.py` ranks and snippets; it gives you neither the argument nor the full
-abstract. Both live in the talk's markdown, and every file is named
-`<id>-<slug>.md`, so an `id` from step 1 is one glob away:
+**Cover the vocabulary inside one query, not across five.** A bare two-word
+query ANDs its terms across unrelated talks: `agent security` ranks the
+obviously on-topic talk ("The day the chatbot asked for sudo") only 6th, behind
+generic security talks and generic agent talks. Put the domain's own words in
+one `OR` and FTS5 ranks the union for you — a talk hitting several of the terms
+rises by itself:
 
 ```bash
-cat kb/talks/wwc-2026-berlin/864-*.md          # abstract + speaker bio + transcript
+python3 kb/tools/query.py 'agent OR agents OR "prompt injection" OR guardrails OR identity OR "trust boundary"' -n 12 --brief
 ```
 
-**Go straight here for lookups.** "What is talk 864 about", "who gave it",
-"what's its recording link", "read me the abstract" are all one `cat` — do not
-try to answer them from search snippets. And for the talks that carry a
-comparison question, read the file before you characterise anyone's position.
+That puts the sudo talk 2nd and surrounds it with the neighbouring talks that
+actually answer the question. Five separate searches unioned by hand find much
+the same thing and are paid for five times.
 
-The markdown contains the whole transcript, chunked into ~45s paragraphs each
-carrying a deep link into the video. That is where a speaker's actual position
-lives — the abstract is marketing copy written months earlier.
+`abstract_snippet` is `""` whenever the hit came from the transcript layer
+only: the query did not match the abstract, **not** that the talk has none.
+Every talk has one, and step 2 prints it.
 
-### 3. Synthesize
+## 2. `excerpt.py` — read what they actually say
+
+```bash
+python3 kb/tools/excerpt.py 913 844 628 -q "spec driven development"
+```
+
+Or pipe step 1 straight into it:
+
+```bash
+cd kb/tools && python3 query.py "agent memory" -n 6 --ids | xargs python3 excerpt.py -q "agent memory"
+```
+
+For each talk it prints the metadata, the full abstract, the **opening** — where
+the speaker states what they are about to argue — and a window of speech either
+side of each passage that matched, deep-linked to the second. Those passages are
+ranked by the same bm25 that ranked the talk, restricted to that talk, so **what
+you read is what put the talk in the results**. It closes with `499 of 4767
+words (10%)`, so a thin excerpt is visible as one rather than mistaken for the
+talk.
+
+Flags: `-n` (how many windows' worth of speech, default 6), `--window` (seconds
+either side of a hit, default 40), `--opening` (default 60, `0` for none),
+`--full` (the whole transcript), `--json`. It accepts a talk id, a YouTube id or
+URL, or a `kb/talks/**.md` path.
+
+**Never `cat` a talk markdown file to find out what a speaker said.** Those
+files inline the whole transcript — 28 KB, about 7,000 tokens each — and eight
+of them is 60,000 tokens spent to use a few paragraphs. `excerpt.py` returns the
+same eight for about 8,000. Measured over eight topics and 43 talks, 138 of 138
+search-ranked moments land inside the excerpt, on 20% of the words. Reach for
+`--full` or `cat` only when the user asks for a whole talk — a summary of one
+specific session, a full walkthrough — and say that is what you are doing.
+
+`cat` is still right for **lookups**: "what is talk 864 about", "who gave it",
+"what's its recording link" are one `cat kb/talks/wwc-2026-berlin/864-*.md`,
+or `excerpt.py 864 --opening 0` for the header and abstract alone.
+
+## 3. Synthesize
 
 For "what do different speakers think about X" questions, structure the answer
 around **positions, not talks**:
@@ -104,22 +127,34 @@ around **positions, not talks**:
 
 Close with a short "worth watching" list — 3-5 talks, each with one line on why.
 
+## The budget
+
+A one-sentence question is one search and a handful of excerpts — on the order
+of **15k tokens, not 150k**. If a plan involves reading more than one or two
+transcripts whole, it is the wrong plan; narrow the `-q` or raise `-n` on the
+excerpt instead. There is no signal in a 28 KB file saying it cost 7,000 tokens
+to learn one paragraph, so nothing but this section will tell you.
+
 ## Notes and limits
 
 - **Every talk has an exact-timed transcript.** All 358 of them —
   `has_transcript = 1` throughout, `"timing": "exact"`, `"source": "yt"`,
-  1,514,014 words over 53,988 indexed passages — so no answer here ever has to
+  1,513,943 words over 53,982 indexed passages — so no answer here ever has to
   rest on an abstract alone. Word counts are the `transcript_words` column in
   `talks.db` and `word_count` in the transcript JSON; they are *not* `w`, which
   is a compact key in `kb/data/search-meta.json` that only the browser UI reads.
   Deep links land on a **passage boundary**, not on the word: captions are
-  grouped into ~25-word passages and a passage keeps its first caption's start,
+  grouped into ~28-word passages and a passage keeps its first caption's start,
   so the phrase you searched is spoken 0–4 seconds *after* the timestamp and
   never before it. Link straight to it rather than hedging; `--json` carries the
   exact float (`"start": 1344.28`) if a consumer needs the precision. If a
   transcript ever turns up marked `"timing": "estimated"` — the kome.ai
   fallback, unused since the corpus was re-fetched — its starts are interpolated
   from word position, and only then should a timestamp be read as "around here".
+- Two ids are in play. `talks.id` is this corpus's own integer — what `--ids`
+  prints, what the markdown files are named after, what `excerpt.py` takes.
+  `video_id` is YouTube's and is what the deep links carry. `excerpt.py` accepts
+  either.
 - Rebuild after new transcripts land, **both steps and in this order**:
   `python3 kb/tools/sync_agenda.py` inlines the transcripts into
   `kb/talks/*.md`, then `python3 kb/tools/build_index.py` rebuilds `talks.db`

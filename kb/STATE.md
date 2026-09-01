@@ -195,6 +195,35 @@ python3 sync_agenda.py && python3 build_index.py
   `[hidden] { display: none !important; }` reset now covers all three, and
   `uitest/suite-controls.js` guards it. If you add a control the script hides,
   you get this for free — but do not remove the reset.
+- **`excerpt.py` exists because retrieval cost is a separate problem from
+  retrieval quality.** The corpus was built by someone reading it, so the unit
+  everything returned was the talk: `query.py` ranked talks and the only way to
+  read one was `cat talks/<event>/<id>-<slug>.md`, which inlines the whole
+  transcript. A talk file averages 28 KB (~7,000 tokens) and 358 of 358 have a
+  transcript, so an agent answering one question read ~60k tokens to use a few
+  paragraphs. The ranker already knew which passages mattered — it ranked them —
+  so `excerpt.py` prints those, plus the opening, and nothing else. Three
+  things about it are load-bearing, and each failure they prevent is silent:
+    - **`-n` is a budget, not a count of passages.** On a talk that says the
+      query word every other minute, six windows each grow to meet their
+      neighbours and the merge hands back one span covering the talk — the
+      excerpt *is* the transcript again, with nothing in the output saying so.
+      `spans_for` spends `n * 2 * window` seconds of speech, best-ranked hit
+      first. `test_excerpt.py` pins this offline; keep it.
+    - **The excerpt query has to relax.** A segment is ~28 words, so the strict
+      `"spec" AND "driven" AND "development"` that ranks *talks* correctly
+      matches no single segment. Without `query.relaxed_query`'s OR fallback,
+      every multi-word `-q` finds nothing, takes the "no hits" branch, and a
+      query matching nothing costs a full read. `relaxed_query` is deliberately
+      not wired into `search()`: the default `--json` shape and ranking are what
+      `uitest/suite-ranking.js` compares the browser against.
+    - **Ids that begin with a hyphen.** Not reachable through this corpus's own
+      `--ids` pipe, which prints integer `talks.id`, but `split_ids` stays —
+      the moment anyone pastes a YouTube id like `-stDHMwbBRw`, argparse reads
+      it as an unknown option and refuses the run.
+  Measured over eight topics and 43 talks: 138 of 138 search-ranked moments land
+  inside the excerpt, on 20% of the words; the same eight ids cost ~8k tokens as
+  excerpts against ~60k as whole files.
 - Talks without a recording (135 of 493) are excluded by design; `--keep-all`
   overrides.
 
