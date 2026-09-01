@@ -13,19 +13,30 @@ Two layers are searched and merged:
     python3 query.py "code review" --json          # for scripts and agents
     python3 query.py "code review" --json --brief  # the same choice, a third of the bytes
     python3 query.py "code review" --ids | xargs python3 excerpt.py -q "code review"
+    python3 query.py --facets                      # every track / type / stage, with counts
 
 Flags: -n/--limit, --track, --type, --stage, --event, --no-moments, --json,
---brief, --ids.
+--brief, --ids, --facets.
 Facet values are matched exactly and case-sensitively; a value the corpus does
-not have is an error that lists the ones it does.
+not have is an error that lists the ones it does — `--facets` lists them all.
 
-FTS5 syntax works: quoted "exact phrase", OR, NOT, prefix*.
+A bare query is ANDed: every content word has to appear in the record.
+Stopwords are dropped first, so "what do speakers think about vibe coding"
+searches for "speakers think vibe coding" rather than for nothing; hyphens and
+slashes split, so "AI-driven" is "ai" AND "driven", the same as with a space.
+When the strict AND finds fewer than -n talks, the rest of the list is filled
+from an OR of the same words, appended after the strict hits and marked
+`relaxed` — the strict order never changes, only the tail of a short list.
+
+FTS5 syntax works: quoted "exact phrase", OR, NOT, prefix*. A query that uses
+it is passed through as written, neither rewritten nor relaxed.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sqlite3
 import sys
@@ -55,13 +66,21 @@ SEG_PER_HIT = 50
 EXPLICIT_RE = re.compile(r'["*]|\b(OR|NOT|AND|NEAR)\b')
 
 
+# Bare words are split on the punctuation FTS5's tokenizer splits on anyway.
+# Kept whole and quoted, "AI-driven" was the *phrase* "ai driven" — adjacent
+# words — while "ai driven" was "ai" AND "driven", anywhere in the record; a
+# hyphen made the query stricter than a space. Split, the two are the same.
+SPLIT_RE = re.compile(r"[-/.]+")
+
+
 def query_words(raw: str, warn: bool = True) -> list[str]:
-    """The bare words of a query, de-duplicated and capped."""
+    """The bare words of a query, split on hyphens, de-duplicated and capped."""
     words, seen = [], set()
-    for w in re.findall(r"[\w'+#.-]+", raw):
-        if w.lower() not in seen:  # repeating a term only makes FTS5 work harder
-            seen.add(w.lower())
-            words.append(w)
+    for chunk in re.findall(r"[\w'+#.\-/]+", raw):
+        for w in SPLIT_RE.split(chunk):
+            if w and w.lower() not in seen:  # repeating a term only makes FTS5 work harder
+                seen.add(w.lower())
+                words.append(w)
     if not words:
         raise SystemExit("empty query")
     if len(words) > MAX_TERMS:
@@ -72,11 +91,23 @@ def query_words(raw: str, warn: bool = True) -> list[str]:
     return words
 
 
+def content_words(raw: str, warn: bool = True) -> list[str]:
+    """`query_words` minus stopwords — unless that leaves nothing, in which
+    case the stopwords are the query and they stay.
+
+    A question carries its own scaffolding ("what do speakers think about")
+    and ANDing that with the topic words matched no record at all. Dropping it
+    is what turns a question into the search its asker meant.
+    """
+    words = query_words(raw, warn)
+    return [w for w in words if w.lower() not in wadkb.STOPWORDS] or words
+
+
 def fts_query(raw: str) -> str:
-    """Pass FTS5 operators through, otherwise AND the bare words together."""
+    """Pass FTS5 operators through, otherwise AND the content words together."""
     if EXPLICIT_RE.search(raw):
         return raw
-    return " AND ".join(f'"{w}"' for w in query_words(raw))
+    return " AND ".join(f'"{w}"' for w in content_words(raw))
 
 
 def relaxed_query(raw: str) -> str | None:
@@ -87,8 +118,9 @@ def relaxed_query(raw: str) -> str | None:
     the record. Inside a single ~28-word segment it is nearly always too
     strict — "eval driven development" is spoken across two of them — so a
     caller that matches segments within one talk (`excerpt.py`) needs a
-    fallback, or it finds nothing and concludes the talk never says it. Still
-    ranked by bm25, so the passage carrying more of the terms still wins.
+    fallback, or it finds nothing and concludes the talk never says it. The
+    same fallback fills the tail of a short result list in `search()`. Still
+    ranked by bm25, so the record carrying more of the terms still wins.
     """
     if EXPLICIT_RE.search(raw):
         return None
@@ -96,10 +128,17 @@ def relaxed_query(raw: str) -> str | None:
     if len(words) < 2:  # one word cannot be relaxed into anything but itself
         return None
     content = [w for w in words if w.lower() not in wadkb.STOPWORDS] or words
+    if len(content) < 2:
+        return None
     return " OR ".join(f'"{w}"' for w in content)
 
 
-def search(con, q: str, limit: int, filters: dict) -> list[dict]:
+def layer_hits(con, q: str, limit: int, filters: dict) -> tuple[list[dict], bool]:
+    """Every talk matching `q` in either layer, best first, before the cut.
+
+    Returns the ranked hits and whether the transcript layer was truncated at
+    its row cap — the caller only says so if it cost results asked for.
+    """
     where, params = [], {"q": q}
     for col, val in filters.items():
         if val:
@@ -144,11 +183,37 @@ def search(con, q: str, limit: int, filters: dict) -> list[dict]:
             h["moments"].append({"start": start, "text": snip})
             h["score"] += -rank * W_SEG / (len(h["moments"]) ** 0.5)
 
-    ranked = sorted(hits.values(), key=lambda h: -h["score"])[:limit]
-    if len(seg_rows) >= seg_cap and len(ranked) < limit:
+    ranked = sorted(hits.values(), key=lambda h: -h["score"])
+    return ranked, len(seg_rows) >= seg_cap
+
+
+def fill_relaxed(strict: list[dict], relaxed: list[dict], limit: int) -> list[dict]:
+    """Top up a short strict list from the relaxed one — appended, never
+    interleaved, and flagged.
+
+    A relaxed hit matched *some* of the words; a strict hit matched all of
+    them, and outranks it however the scores compare. Keeping the strict order
+    intact is what lets the browser's ranking be measured against this one.
+    """
+    out = [{**h, "relaxed": False} for h in strict[:limit]]
+    have = {h["id"] for h in out}
+    for h in relaxed:
+        if len(out) >= limit:
+            break
+        if h["id"] not in have:
+            have.add(h["id"])
+            out.append({**h, "relaxed": True})
+    return out
+
+
+def search(con, q: str, limit: int, filters: dict, relaxed: str | None = None) -> list[dict]:
+    strict, truncated = layer_hits(con, q, limit, filters)
+    extra = layer_hits(con, relaxed, limit, filters)[0] if relaxed and len(strict) < limit else []
+    ranked = fill_relaxed(strict, extra, limit)
+    if truncated and len(strict) < limit:
         # Only worth saying when it cost the caller results they asked for.
-        print(f"note: stopped after {seg_cap} transcript hits — talks that match only "
-              f"further down are missing", file=sys.stderr)
+        print(f"note: stopped after {max(SEG_ROWS, limit * SEG_PER_HIT)} transcript hits — "
+              f"talks that match only further down are missing", file=sys.stderr)
 
     cols = ("id title track type stage tags speakers companies duration_min "
             "recording_url video_id session_page event_name has_transcript").split()
@@ -165,7 +230,17 @@ def fmt_ts(sec: float) -> str:
     return f"{s // 60}:{s % 60:02d}"
 
 
-def render(hits: list[dict], show_moments: bool) -> None:
+# Escape codes only when a person is looking. Piped into a file or an agent,
+# every title and every highlighted word used to arrive wrapped in \033[…],
+# so the [[…]] hit markers are printed as they are instead.
+COLOR = sys.stdout.isatty() and not os.environ.get("NO_COLOR")
+
+
+def paint(s: str, code: str) -> str:
+    return f"\033[{code}m{s}\033[0m" if COLOR else s
+
+
+def render(hits: list[dict], show_moments: bool, brief: bool = False) -> None:
     if not hits:
         print("no matches")
         return
@@ -173,22 +248,25 @@ def render(hits: list[dict], show_moments: bool) -> None:
         who = h["speakers"] or "—"
         if h["companies"]:
             who += f" ({h['companies']})"
-        print(f"\n\033[1m{i}. {h['title']}\033[0m")
+        tag = "  (relaxed)" if h.get("relaxed") else ""
+        print("\n" + paint(f"{i}. {h['title']}", "1") + tag)
         print(f"   {who}")
         print(f"   {h['track']} · {h['type']} · {h['duration_min']}min"
               + ("  · transcript" if h["has_transcript"] else ""))
         if h["abstract_snippet"]:
-            print(f"   \033[2m{clean_snip(h['abstract_snippet'])}\033[0m")
-        if show_moments and h["moments"]:
-            for m in h["moments"]:
+            print(f"   {paint(clean_snip(h['abstract_snippet']), '2')}")
+        moments = h["moments"][:BRIEF_MOMENTS] if brief else h["moments"]
+        if show_moments and moments:
+            for m in moments:
                 link = f"https://www.youtube.com/watch?v={h['video_id']}&t={int(m['start'])}s"
-                print(f"   \033[36m{fmt_ts(m['start'])}\033[0m {clean_snip(m['text'])}")
+                print(f"   {paint(fmt_ts(m['start']), '36')} {clean_snip(m['text'])}")
                 print(f"        {link}")
         print(f"   {h['recording_url']}")
 
 
 def clean_snip(s: str) -> str:
-    return " ".join((s or "").split()).replace("[[", "\033[33m").replace("]]", "\033[0m")
+    s = " ".join((s or "").split())
+    return s.replace("[[", "\033[33m").replace("]]", "\033[0m") if COLOR else s
 
 
 def plain_snip(s: str) -> str:
@@ -201,7 +279,7 @@ def plain_snip(s: str) -> str:
 # from reading one: the tags, the companies, the stage, the type and the
 # session page are all one lookup by id away, and across a dozen hits they are
 # most of the bytes and none of the decision.
-BRIEF = ("id score title speakers track duration_min recording_url video_id "
+BRIEF = ("id score relaxed title speakers track duration_min recording_url video_id "
          "event_name has_transcript abstract_snippet").split()
 
 # Moments kept per hit under --brief. One passage says whether the talk is
@@ -249,12 +327,36 @@ def check_facet(con, col: str, val: str | None, flag: str) -> None:
         if len(valid) > 12:
             shown += f", … ({len(valid)} in all)"
         raise SystemExit(f"unknown {flag} {val!r} — values are exact and case-sensitive\n"
-                         f"  valid: {shown}")
+                         f"  valid: {shown}\n  (query.py --facets lists them all, with counts)")
+
+
+FACETS = (("track", "--track"), ("type", "--type"), ("stage", "--stage"),
+          ("event_slug", "--event"))
+
+
+def facets(con) -> dict[str, list[tuple[str, int]]]:
+    """Every value each filter accepts, with how many talks carry it.
+
+    The filters are exact and case-sensitive, and until this existed the only
+    way to learn the spelling of a track was to pass a wrong one.
+    """
+    return {col: con.execute(
+        f"SELECT COALESCE(NULLIF({col}, ''), '(none)'), COUNT(*) FROM talks "
+        f"GROUP BY 1 ORDER BY 2 DESC, 1").fetchall() for col, _ in FACETS}
+
+
+def render_facets(fac: dict) -> None:
+    for col, flag in FACETS:
+        rows = fac[col]
+        print(f"{paint(flag, '1')}  ({len(rows)} values)")
+        for val, n in rows:
+            print(f"  {n:4d}  {val}")
+        print()
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("query", nargs="+")
+    ap.add_argument("query", nargs="*")
     ap.add_argument("-n", "--limit", type=positive_int, default=10)
     ap.add_argument("--track")
     ap.add_argument("--type", dest="type_")
@@ -267,7 +369,11 @@ def main() -> None:
                     help="only the fields and passages needed to choose a talk")
     ap.add_argument("--ids", action="store_true",
                     help="print only the talk ids, one per line — feeds excerpt.py")
+    ap.add_argument("--facets", action="store_true",
+                    help="list every track, type, stage and event with counts, then exit")
     args = ap.parse_args()
+    if not args.query and not args.facets:
+        ap.error("a query is required (or --facets)")
 
     if not wadkb.TALKS_DB.exists():
         # The index is derived and not committed, so build it on first use.
@@ -277,16 +383,26 @@ def main() -> None:
         build_index.main()
 
     con = sqlite3.connect(f"file:{wadkb.TALKS_DB}?mode=ro", uri=True)
+    if args.facets:
+        fac = facets(con)
+        if args.json:
+            json.dump({col: [{"value": v, "talks": n} for v, n in rows]
+                       for col, rows in fac.items()}, sys.stdout, ensure_ascii=False, indent=2)
+            print()
+        else:
+            render_facets(fac)
+        return
+
     check_facet(con, "track", args.track, "--track")
     check_facet(con, "type", args.type_, "--type")
     check_facet(con, "stage", args.stage, "--stage")
     check_facet(con, "event_slug", args.event_slug, "--event")
 
-    q = fts_query(" ".join(args.query))
-    hits = search(con, q, args.limit, {
+    raw = " ".join(args.query)
+    hits = search(con, fts_query(raw), args.limit, {
         "track": args.track, "type": args.type_,
         "stage": args.stage, "event_slug": args.event_slug,
-    })
+    }, relaxed=relaxed_query(raw))
 
     if args.ids:
         # So that reading the hits is a pipe rather than eight ids retyped:
@@ -296,7 +412,7 @@ def main() -> None:
     elif args.json:
         emit_json(hits, args.moments, args.brief)
     else:
-        render(hits, args.moments and not args.brief)
+        render(hits, args.moments, args.brief)
 
 
 if __name__ == "__main__":
