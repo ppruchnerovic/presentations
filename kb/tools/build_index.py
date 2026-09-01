@@ -17,11 +17,13 @@ Produces two independent indexes from the same corpus:
 
 from __future__ import annotations
 
+import argparse
 import collections
 import json
 import math
 import shutil
 import sqlite3
+import sys
 
 import wadkb
 
@@ -64,9 +66,15 @@ CREATE VIRTUAL TABLE segments_fts USING fts5(
 # has to be a property of the index, not of whichever route fetched the
 # transcript: YouTube's captions arrive as ~6-word lines, where "spec driven
 # development" is spoken across three of them and matches none. Grouping them
-# back into ~27-word passages restores the granularity the weights were tuned
+# back into ~28-word passages restores the granularity the weights were tuned
 # against. Deep links are unaffected — the browser reads the raw caption files.
 PASSAGE_WORDS = 25
+
+# Share of a transcript's words that survive tokenizing. A healthy English talk
+# lands around 0.45; a transliterated one scores under 0.01, because none of its
+# characters tokenize into terms the index can hold. Anything below this is not
+# searchable whatever its word_count claims.
+UNUSABLE_RATIO = 0.05
 
 
 def to_passages(segs: list[dict]) -> list[dict]:
@@ -183,6 +191,7 @@ def build_browser_index(talks: list[dict]) -> dict:
     postings: dict[str, dict[int, int]] = collections.defaultdict(dict)
     positions: dict[str, dict[int, list[int]]] = collections.defaultdict(dict)
     doc_len: dict[int, int] = {}
+    unusable: list[tuple[int, str, int, int]] = []
 
     for t in talks:
         text, segs, words = transcript_text(t["id"])
@@ -210,6 +219,14 @@ def build_browser_index(talks: list[dict]) -> dict:
             continue
         toks = wadkb.tokenize(text)
         doc_len[t["id"]] = len(toks)
+        # A transcript can be present, exactly timed and the right length in
+        # words, and still be worthless to search: YouTube sometimes misdetects
+        # the spoken language and returns a phonetic transliteration into
+        # another script, which tokenizes to almost nothing. Nothing else in the
+        # pipeline notices — the file exists and its word_count is honest — so
+        # flag it here by symptom rather than by hard-coded id.
+        if words and len(toks) / words < UNUSABLE_RATIO:
+            unusable.append((t["id"], t["title"], len(toks), words))
         for term, tf in collections.Counter(toks).items():
             postings[term][t["id"]] = tf
         # Which segments each term falls in, so the browser can score passages
@@ -224,7 +241,7 @@ def build_browser_index(talks: list[dict]) -> dict:
         shutil.rmtree(wadkb.TINDEX)
 
     if not postings:
-        return {"terms": 0, "shards": 0, "docs": 0}
+        return {"terms": 0, "shards": 0, "docs": 0, "unusable": unusable}
 
     n_docs = len(doc_len)
     avg_len = sum(doc_len.values()) / n_docs
@@ -255,24 +272,41 @@ def build_browser_index(talks: list[dict]) -> dict:
         },
         compact=True,
     )
-    return {"terms": sum(len(v) for v in shards.values()), "shards": len(shards), "docs": n_docs}
+    return {"terms": sum(len(v) for v in shards.values()), "shards": len(shards),
+            "docs": n_docs, "unusable": unusable}
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    # argv defaults to nothing rather than sys.argv, because query.py calls
+    # main() directly when the index is missing — the flags on that command line
+    # are query.py's, not ours. Parsing first also means --help and typos exit
+    # before anything is rebuilt.
+    argparse.ArgumentParser(
+        description="Rebuild data/talks.db and the browser search index from "
+                    "data/talks.json + data/transcripts/. Takes no options."
+    ).parse_args([] if argv is None else argv)
+
     talks = wadkb.load_talks()
     n_tr, n_seg = build_sqlite(talks)
     stats = build_browser_index(talks)
 
-    print(f"indexed {len(talks)} talks · {n_tr} with transcripts · {n_seg:,} segments")
-    print(f"  data/talks.db          {wadkb.human_size(wadkb.TALKS_DB.stat().st_size)}")
-    print(f"  data/search-meta.json  {wadkb.human_size(wadkb.SEARCH_META.stat().st_size)}")
+    # All of this goes to stderr, not stdout: query.py builds the index on first
+    # use, and its own stdout may be JSON that a script is about to parse.
+    err = sys.stderr
+    print(f"indexed {len(talks)} talks · {n_tr} with transcripts · {n_seg:,} segments", file=err)
+    print(f"  data/talks.db          {wadkb.human_size(wadkb.TALKS_DB.stat().st_size)}", file=err)
+    print(f"  data/search-meta.json  {wadkb.human_size(wadkb.SEARCH_META.stat().st_size)}", file=err)
     if stats["shards"]:
         total = sum(p.stat().st_size for p in wadkb.TINDEX.glob("*.json"))
         print(f"  data/tindex/           {wadkb.human_size(total)} in {stats['shards']} shards, "
-              f"{stats['terms']:,} terms over {stats['docs']} transcripts")
+              f"{stats['terms']:,} terms over {stats['docs']} transcripts", file=err)
     else:
-        print("  data/tindex/           (empty — no transcripts fetched yet)")
+        print("  data/tindex/           (empty — no transcripts fetched yet)", file=err)
+
+    for tid, title, toks, words in stats.get("unusable", []):
+        print(f"  ! talk {tid} indexes {toks} terms from {words:,} words "
+              f"({toks / words:.1%}) — unsearchable: {title[:48]}", file=err)
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

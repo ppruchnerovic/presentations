@@ -7,9 +7,14 @@ Two layers are searched and merged:
     which also gives the timestamp — and a deep link — for each hit.
 
     python3 query.py "ai driven sdlc"
-    python3 query.py "spec driven development" --moments
+    python3 query.py "spec driven development" -n 20
     python3 query.py "agents" --track "AI Agents" --type Keynote/Talk
+    python3 query.py "code review" --no-moments    # just the talks, no timestamps
     python3 query.py "code review" --json          # for scripts and agents
+
+Flags: -n/--limit, --track, --type, --stage, --event, --no-moments, --json.
+Facet values are matched exactly and case-sensitively; a value the corpus does
+not have is an error that lists the ones it does.
 
 FTS5 syntax works: quoted "exact phrase", OR, NOT, prefix*.
 """
@@ -29,14 +34,34 @@ import wadkb
 W_META = 1.0
 W_SEG = 1.6
 
+# A real query is a handful of words. Past this it is a paste or a generated
+# string, and ANDing thousands of terms together costs FTS5 minutes.
+MAX_TERMS = 32
+
+# How many rows each layer pulls before ranking. Both scale with -n so a large
+# limit is honoured rather than silently truncated; the floors keep an ordinary
+# search cheap. Metadata has one row per talk, so its floor already covers the
+# whole corpus; a talk keeps at most 4 moments, hence the segment multiplier.
+META_ROWS = 400
+SEG_ROWS = 1500
+SEG_PER_HIT = 50
+
 
 def fts_query(raw: str) -> str:
     """Pass FTS5 operators through, otherwise AND the bare words together."""
     if re.search(r'["*]|\b(OR|NOT|AND|NEAR)\b', raw):
         return raw
-    words = [w for w in re.findall(r"[\w'+#.-]+", raw) if w]
+    words, seen = [], set()
+    for w in re.findall(r"[\w'+#.-]+", raw):
+        if w.lower() not in seen:  # repeating a term only makes FTS5 work harder
+            seen.add(w.lower())
+            words.append(w)
     if not words:
         raise SystemExit("empty query")
+    if len(words) > MAX_TERMS:
+        print(f"query has {len(words)} terms — searching the first {MAX_TERMS}",
+              file=sys.stderr)
+        words = words[:MAX_TERMS]
     return " AND ".join(f'"{w}"' for w in words)
 
 
@@ -47,6 +72,8 @@ def search(con, q: str, limit: int, filters: dict) -> list[dict]:
             where.append(f"t.{col} = :{col}")
             params[col] = val
     clause = (" AND " + " AND ".join(where)) if where else ""
+    params["meta_cap"] = max(META_ROWS, limit)
+    params["seg_cap"] = seg_cap = max(SEG_ROWS, limit * SEG_PER_HIT)
 
     hits: dict[int, dict] = {}
 
@@ -55,7 +82,7 @@ def search(con, q: str, limit: int, filters: dict) -> list[dict]:
                snippet(talks_fts, 1, '[[', ']]', ' … ', 24) AS snip
         FROM talks_fts JOIN talks t ON t.id = talks_fts.rowid
         WHERE talks_fts MATCH :q{clause}
-        ORDER BY rank LIMIT 400
+        ORDER BY rank LIMIT :meta_cap
     """
     try:
         rows = con.execute(meta_sql, params).fetchall()
@@ -70,7 +97,7 @@ def search(con, q: str, limit: int, filters: dict) -> list[dict]:
         FROM segments_fts JOIN segments s ON s.rowid = segments_fts.rowid
         JOIN talks t ON t.id = s.talk_id
         WHERE segments_fts MATCH :q{clause}
-        ORDER BY rank LIMIT 1500
+        ORDER BY rank LIMIT :seg_cap
     """
     try:
         seg_rows = con.execute(seg_sql, params).fetchall()
@@ -84,6 +111,10 @@ def search(con, q: str, limit: int, filters: dict) -> list[dict]:
             h["score"] += -rank * W_SEG / (len(h["moments"]) ** 0.5)
 
     ranked = sorted(hits.values(), key=lambda h: -h["score"])[:limit]
+    if len(seg_rows) >= seg_cap and len(ranked) < limit:
+        # Only worth saying when it cost the caller results they asked for.
+        print(f"note: stopped after {seg_cap} transcript hits — talks that match only "
+              f"further down are missing", file=sys.stderr)
 
     cols = ("id title track type stage tags speakers companies duration_min "
             "recording_url video_id session_page event_name has_transcript").split()
@@ -94,7 +125,10 @@ def search(con, q: str, limit: int, filters: dict) -> list[dict]:
 
 
 def fmt_ts(sec: float) -> str:
-    return f"{int(sec) // 60}:{int(sec) % 60:02d}"
+    s = int(sec)
+    if s >= 3600:
+        return f"{s // 3600}:{s // 60 % 60:02d}:{s % 60:02d}"
+    return f"{s // 60}:{s % 60:02d}"
 
 
 def render(hits: list[dict], show_moments: bool) -> None:
@@ -123,10 +157,43 @@ def clean_snip(s: str) -> str:
     return " ".join((s or "").split()).replace("[[", "\033[33m").replace("]]", "\033[0m")
 
 
+def plain_snip(s: str) -> str:
+    """Same text without the [[…]] hit markers — a JSON consumer wants the
+    sentence, not the terminal's highlighting."""
+    return " ".join((s or "").split()).replace("[[", "").replace("]]", "")
+
+
+def positive_int(value: str) -> int:
+    """A limit of 0 or less is never what was meant: 0 looked like 'no matches'
+    and a negative one sliced results off the tail."""
+    try:
+        n = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"invalid int value: {value!r}")
+    if n < 1:
+        raise argparse.ArgumentTypeError(f"must be 1 or more, got {n}")
+    return n
+
+
+def check_facet(con, col: str, val: str | None, flag: str) -> None:
+    """Filters are exact and case-sensitive, so a typo is indistinguishable from
+    an honest miss — reject it and show what the corpus actually has."""
+    if not val:
+        return
+    valid = [r[0] for r in con.execute(
+        f"SELECT DISTINCT {col} FROM talks WHERE {col} <> '' ORDER BY {col}")]
+    if val not in valid:
+        shown = ", ".join(valid[:12])
+        if len(valid) > 12:
+            shown += f", … ({len(valid)} in all)"
+        raise SystemExit(f"unknown {flag} {val!r} — values are exact and case-sensitive\n"
+                         f"  valid: {shown}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("query", nargs="+")
-    ap.add_argument("-n", "--limit", type=int, default=10)
+    ap.add_argument("-n", "--limit", type=positive_int, default=10)
     ap.add_argument("--track")
     ap.add_argument("--type", dest="type_")
     ap.add_argument("--stage")
@@ -144,6 +211,11 @@ def main() -> None:
         build_index.main()
 
     con = sqlite3.connect(f"file:{wadkb.TALKS_DB}?mode=ro", uri=True)
+    check_facet(con, "track", args.track, "--track")
+    check_facet(con, "type", args.type_, "--type")
+    check_facet(con, "stage", args.stage, "--stage")
+    check_facet(con, "event_slug", args.event_slug, "--event")
+
     q = fts_query(" ".join(args.query))
     hits = search(con, q, args.limit, {
         "track": args.track, "type": args.type_,
@@ -153,7 +225,9 @@ def main() -> None:
     if args.json:
         for h in hits:
             h["tags"] = [x for x in (h["tags"] or "").split(", ") if x]
-            h["abstract_snippet"] = " ".join((h["abstract_snippet"] or "").split())
+            h["abstract_snippet"] = plain_snip(h["abstract_snippet"])
+            h["moments"] = ([{"start": m["start"], "text": plain_snip(m["text"])}
+                             for m in h["moments"]] if args.moments else [])
         json.dump(hits, sys.stdout, ensure_ascii=False, indent=2)
         print()
     else:
