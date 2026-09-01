@@ -43,6 +43,13 @@ The script is resumable — it skips talks it already has, so you can stop it wi
 Ctrl-C and start it again. Talks whose video has no captions are recorded in
 data/transcripts/_misses.json so they are not retried forever.
 
+Captions are taken in a language you asked for (--languages, English first), or
+machine-translated into one (--translate-to). A track in some other language is
+refused unless you pass --allow-other-languages: YouTube occasionally
+auto-detects an English talk as another language and returns the ASR as
+transliteration, which is useless for search and, saved as a success, never
+re-fetched.
+
     python3 fetch_transcripts.py --retry-misses     # try the failures again
     python3 fetch_transcripts.py --limit 20         # small trial run
     python3 fetch_transcripts.py --proxy http://user:pass@host:port
@@ -75,16 +82,106 @@ UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
       "Chrome/131.0.0.0 Safari/537.36")
 
 
+# youtube-transcript-api exceptions that mean "this IP, this environment", not
+# "this talk". Matched by class where the package is installed, by name where it
+# is not (and for versions that renamed them: `TooManyRequests` is the pre-1.0
+# name of what 1.x calls `IpBlocked`).
+#   RequestBlocked / IpBlocked        the bot wall and the 429
+#   YouTubeRequestFailed              any transport-level failure, 403/5xx included
+#   PoTokenRequired                   YouTube demanded a proof-of-origin token
+#   FailedToCreateConsentCookie       stuck behind the EU consent wall
+# Deliberately NOT here: AgeRestricted, VideoUnavailable, TranscriptsDisabled,
+# VideoUnplayable, NoTranscriptFound — those are facts about the video, and a
+# block stops the whole run, so misclassifying one would park the run on it.
+BLOCK_EXC_NAMES = ("IpBlocked", "TooManyRequests", "RequestBlocked",
+                   "YouTubeRequestFailed", "PoTokenRequired",
+                   "FailedToCreateConsentCookie")
+
+# yt-dlp reports a refusal in its stderr text rather than its exit code, so the
+# text is all there is to tell "YouTube is refusing this IP" (retryable, never a
+# miss) from "this video has no captions" (a real miss). The bot wall is the
+# expensive one: cached as a miss it is skipped on every later rerun.
+YTDLP_BLOCK_MARKERS = (
+    "sign in to confirm",            # "…you're not a bot" — the bot wall
+    "not a bot",
+    "confirm you are not a bot",
+    "too many requests", "rate limit", "rate-limit",
+    "http error 403", "http error 401",
+    "captcha",
+    "consent", "cookies are required", "cookies to prove",
+    "login required", "requires login", "please sign in", "sign in to view",
+    "po token", "potoken", "proof of origin",
+    "content is not available on this app",
+    "is likely being blocked", "has been blocked", "temporarily blocked",
+    "your ip", "this ip",
+)
+# …but these are facts about the *video*, and several of them also match a
+# marker above ("Sign in to confirm your age" contains "sign in to confirm"), so
+# they are checked first. Treating an age gate as an IP block would stop the
+# whole run — and every retry round — on one video that no amount of waiting fixes.
+YTDLP_VIDEO_MARKERS = (
+    "confirm your age", "age-restricted", "age restricted",
+    "inappropriate for some users",
+    "private video", "members-only", "members only",
+    "video unavailable", "removed by the uploader", "has been terminated",
+)
+# Bare status codes, matched on word boundaries so an unlucky video id
+# ("a429Xy...") cannot masquerade as a throttle.
+YTDLP_BLOCK_CODES = re.compile(r"\b(429|403|401)\b")
+
+
 class BlockedError(Exception):
     """YouTube refused this IP, rather than this video."""
 
 
+_block_types: tuple | None = None
+
+
+def block_exception_types() -> tuple:
+    """The installed library's own block exceptions, so matching survives renames."""
+    global _block_types
+    if _block_types is None:
+        types = [BlockedError]
+        try:
+            import youtube_transcript_api as _yta
+        except ImportError:
+            _yta = None
+        if _yta is not None:
+            for n in BLOCK_EXC_NAMES:
+                t = getattr(_yta, n, None)
+                if isinstance(t, type) and issubclass(t, BaseException):
+                    types.append(t)
+        _block_types = tuple(types)
+    return _block_types
+
+
 def is_block(e: Exception) -> bool:
     """A network verdict, not a fact about the talk — so never cached as a miss."""
-    if isinstance(e, BlockedError):
+    if isinstance(e, block_exception_types()):
         return True
     name = type(e).__name__
-    return any(k in name for k in ("IpBlocked", "TooManyRequests", "RequestBlocked"))
+    return any(k in name for k in BLOCK_EXC_NAMES)
+
+
+def looks_like_block(text: str) -> bool:
+    """Does this yt-dlp output describe a refusal of us, rather than of the video?"""
+    t = (text or "").lower()
+    if any(m in t for m in YTDLP_VIDEO_MARKERS):
+        return False
+    return any(m in t for m in YTDLP_BLOCK_MARKERS) or bool(YTDLP_BLOCK_CODES.search(t))
+
+
+def ytdlp_sub_langs(languages=None) -> str:
+    """--sub-langs patterns for a preference list. `xx.*` catches `en-orig` etc."""
+    if not languages:
+        return YTDLP_SUB_LANGS
+    out: list[str] = []
+    for lang in languages:
+        base = str(lang).split("-")[0].lower()
+        for pat in (f"{base}.*", base):
+            if pat not in out:
+                out.append(pat)
+    return ",".join(out)
 
 
 def kome_length_seconds(s: str) -> float:
@@ -196,19 +293,24 @@ def parse_json3(path: str) -> list[dict]:
     return out
 
 
-def fetch_ytdlp(video_id: str, proxy: str | None = None) -> tuple[list[dict], str]:
+def fetch_ytdlp(video_id: str, proxy: str | None = None,
+                languages=None) -> tuple[list[dict], str]:
     """Exact timings via yt-dlp, which asks a different Innertube client.
 
     Writes the caption track to a temp dir as json3 and parses it; --skip-download
-    means no media is ever fetched, only the subtitle file.
+    means no media is ever fetched, only the subtitle file. Only the wanted
+    languages are requested, and YouTube offers its machine translations under
+    those codes too — so an English talk whose ASR track YouTube filed as Hindi
+    still comes back in English here.
     """
     exe = ytdlp_binary()
     if not exe:
         raise LookupError("yt-dlp is not installed")
+    langs = list(languages or LANGUAGES)
 
     with tempfile.TemporaryDirectory() as tmp:
         cmd = [exe, "--skip-download", "--write-auto-subs", "--write-subs",
-               "--sub-langs", YTDLP_SUB_LANGS, "--sub-format", "json3",
+               "--sub-langs", ytdlp_sub_langs(langs), "--sub-format", "json3",
                "--no-warnings", "--no-progress",
                "-o", os.path.join(tmp, "%(id)s.%(ext)s"),
                f"https://www.youtube.com/watch?v={video_id}"]
@@ -218,21 +320,25 @@ def fetch_ytdlp(video_id: str, proxy: str | None = None) -> tuple[list[dict], st
 
         found = sorted(glob.glob(os.path.join(tmp, "*.json3")))
         if not found:
-            err = (proc.stderr or proc.stdout or "").strip().splitlines()
-            detail = err[-1][:160] if err else "no caption file written"
-            # yt-dlp reports a throttle in its stderr rather than its exit code,
-            # so surface it under the name the block handling looks for.
-            if "429" in detail or "Too Many Requests" in detail:
+            output = f"{proc.stderr or ''}\n{proc.stdout or ''}"
+            lines = [l.strip() for l in output.splitlines() if l.strip()]
+            errs = [l for l in lines if "error" in l.lower()] or lines
+            detail = errs[-1][:160] if errs else "no caption file written"
+            # yt-dlp reports a refusal in its output rather than its exit code, so
+            # surface it under the name the block handling looks for. The whole
+            # output is searched, not just the last line: the bot wall's own line
+            # ("Sign in to confirm you're not a bot") is often followed by a hint.
+            if looks_like_block(output):
                 raise BlockedError(f"yt-dlp: {detail}")
             raise LookupError(f"yt-dlp: {detail}")
 
-        # LANGUAGES is a preference order; pick the earliest one that came back.
+        # `langs` is a preference order; pick the earliest one that came back.
         def rank(p: str) -> int:
             tag = os.path.basename(p).split(".")[-2].lower()
-            for i, want in enumerate(LANGUAGES):
+            for i, want in enumerate(langs):
                 if tag == want.lower() or tag.startswith(want.lower()):
                     return i
-            return len(LANGUAGES)
+            return len(langs)
 
         best = min(found, key=rank)
         segments = parse_json3(best)
@@ -272,22 +378,53 @@ def build_api(proxy: str | None):
     return YouTubeTranscriptApi()
 
 
-def pick_and_fetch(api, video_id: str):
-    """Return (segments, language, is_generated). Prefers a manual transcript."""
+def pick_and_fetch(api, video_id: str, languages=None, translate_to: str = "en",
+                   allow_other_languages: bool = False):
+    """Return (segments, language, is_generated), in a language you asked for.
+
+    Preference: a manual track in a wanted language, then an auto one, then any
+    track machine-translated into `translate_to`. A track in a language nobody
+    asked for is the last resort and off by default — YouTube sometimes
+    auto-detects an English talk as another language, and the ASR then comes
+    back as transliteration (talks 688 and 865 are English speech spelled in
+    Devanagari): unusable for search, and written to disk as a success, so no
+    rerun ever replaces it.
+    """
+    languages = list(languages or LANGUAGES)
     listing = api.list(video_id)
+
     transcript = None
-    try:
-        transcript = listing.find_manually_created_transcript(LANGUAGES)
-    except Exception:
+    for find in (listing.find_manually_created_transcript,
+                 listing.find_generated_transcript):
         try:
-            transcript = listing.find_generated_transcript(LANGUAGES)
+            transcript = find(languages)
+            break
         except Exception:
-            # Fall back to whatever single transcript exists, translated to English.
-            for t in listing:
-                transcript = t.translate("en") if t.is_translatable else t
+            continue          # only the lookup is swallowed; fetch errors propagate
+
+    if transcript is None and translate_to:
+        # Nothing in a wanted language: have YouTube translate one instead of
+        # taking whatever it happens to have. Manual tracks first, as above.
+        for t in sorted(listing, key=lambda t: bool(getattr(t, "is_generated", True))):
+            if not getattr(t, "is_translatable", False):
+                continue
+            try:
+                transcript = t.translate(translate_to)
                 break
+            except Exception:
+                continue
+
     if transcript is None:
-        raise LookupError("no transcript tracks")
+        others = list(listing)
+        if not others:
+            raise LookupError("no transcript tracks")
+        codes = ",".join(dict.fromkeys(str(t.language_code) for t in others))
+        if not allow_other_languages:
+            raise LookupError(
+                f"only {codes} captions: nothing in {'/'.join(languages[:3])} and "
+                f"nothing translatable to {translate_to or '-'} "
+                f"(--allow-other-languages takes them as-is)")
+        transcript = others[0]
 
     fetched = transcript.fetch()
     raw = fetched.to_raw_data() if hasattr(fetched, "to_raw_data") else list(fetched)
@@ -297,7 +434,9 @@ def pick_and_fetch(api, video_id: str):
 _yt_strikes = [0]   # consecutive YouTube failures; 3 in a row means this IP is blocked
 
 
-def fetch_one(api, vid: str, source: str, proxy: str | None = None):
+def fetch_one(api, vid: str, source: str, proxy: str | None = None,
+              languages=None, translate_to: str = "en",
+              allow_other_languages: bool = False):
     """Walk the routes in preference order: exact timings first, estimates last.
 
     Returns (segments, language, auto_generated, timing, source_used). A block
@@ -309,7 +448,8 @@ def fetch_one(api, vid: str, source: str, proxy: str | None = None):
 
     if source in ("auto", "exact", "youtube") and not (source == "auto" and _yt_strikes[0] >= 3):
         try:
-            raw, lang, generated = pick_and_fetch(api, vid)
+            raw, lang, generated = pick_and_fetch(
+                api, vid, languages, translate_to, allow_other_languages)
             segments = [
                 {"start": round(float(s["start"]), 2),
                  "duration": round(float(s["duration"]), 2),
@@ -329,7 +469,7 @@ def fetch_one(api, vid: str, source: str, proxy: str | None = None):
 
     if source in ("auto", "exact", "ytdlp"):
         try:
-            segments, lang = fetch_ytdlp(vid, proxy)
+            segments, lang = fetch_ytdlp(vid, proxy, languages)
             return segments, lang, True, "exact", "ytdlp"
         except Exception as e:
             if exact_only or is_block(e):
@@ -339,13 +479,34 @@ def fetch_one(api, vid: str, source: str, proxy: str | None = None):
     return segments, lang, True, "estimated", "kome"
 
 
+def fetch_with_args(api, vid: str, args):
+    """fetch_one with the language/route options the CLI collected."""
+    return fetch_one(api, vid, args.source, args.proxy,
+                     languages=getattr(args, "languages", None),
+                     translate_to=getattr(args, "translate_to", "en"),
+                     allow_other_languages=getattr(args, "allow_other_languages", False))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--source", choices=("auto", "exact", "youtube", "ytdlp", "kome"),
                     default="auto",
                     help="auto: exact timings if YouTube allows it, else kome.ai. "
                          "exact: routes 1-2 only, never fall back to estimates")
-    ap.add_argument("--limit", type=int, help="only attempt the first N talks")
+    ap.add_argument("--limit", type=int,
+                    help="only attempt the first N talks (a trial run: this also "
+                         "turns off the --retry-after rounds)")
+    ap.add_argument("--languages", default=",".join(LANGUAGES), metavar="LIST",
+                    help="caption languages to accept, best first (default: %(default)s)")
+    ap.add_argument("--translate-to", default="en", metavar="LANG",
+                    help="when no track is in a wanted language, have YouTube translate "
+                         "one into this instead (default: en; empty disables)")
+    ap.add_argument("--allow-other-languages", action="store_true",
+                    help="last resort: accept a track in a language you did not ask "
+                         "for and that cannot be translated. Off by default — a "
+                         "mis-detected ASR track (English speech transcribed as Hindi, "
+                         "as happened to talks 688 and 865) is unusable for search and "
+                         "never gets re-fetched")
     ap.add_argument("--workers", type=int, default=2,
                     help="parallel fetches (default 2; 1 disables threading). "
                          "Requests are paced on every worker, so raising this "
@@ -362,16 +523,24 @@ def main() -> None:
     ap.add_argument("--max-rounds", type=int, default=24,
                     help="give up after this many blocked rounds (default 24)")
     args = ap.parse_args()
+    args.languages = [l.strip() for l in args.languages.split(",") if l.strip()] \
+        or list(LANGUAGES)
 
     talks = wadkb.load_talks()
     wadkb.TRANSCRIPTS.mkdir(parents=True, exist_ok=True)
     misses = {} if args.retry_misses else load_misses()
-    api = build_api(args.proxy)
+    # Only route 1 needs the library, so --source kome / ytdlp must not require
+    # it — those are the routes that still work where route 1 is refused.
+    api = build_api(args.proxy) if args.source in ("auto", "exact", "youtube") else None
     total_ok = total_fail = 0
 
     # Each round re-derives its work from what is on disk, so a blocked round
     # costs nothing but time — nothing is lost and nothing is refetched.
     for rnd in range(1, args.max_rounds + 1):
+        # Strikes are per round: three failures parked route 1 for the rest of
+        # *that* round, but after a --retry-after wait the quota has recovered
+        # and exact timings are worth trying again.
+        _yt_strikes[0] = 0
         todo = [
             t
             for t in talks
@@ -397,7 +566,12 @@ def main() -> None:
         total_fail += fail
         wadkb.write_json(MISSES, misses)
 
-        if not blocked or not args.retry_after or args.limit:
+        if not blocked or not args.retry_after:
+            break
+        if args.limit:
+            print(f"--limit {args.limit} is a trial run, so stopping here instead of "
+                  f"retrying: rerun without --limit to let --retry-after park and "
+                  f"resume.", file=sys.stderr)
             break
         if rnd == args.max_rounds:
             print(f"\ngiving up after {rnd} blocked rounds — rerun when the quota recovers")
@@ -464,8 +638,13 @@ def run_parallel(api, todo, misses, args):
         if blocked.is_set():
             raise BlockedError("skipped — run already stopped by a block")
         time.sleep(random.uniform(args.min_delay, args.max_delay))
-        segments, lang, generated, timing, source = fetch_one(
-            api, t["video_id"], args.source, args.proxy)
+        # Checked again after the pacing sleep: a worker that queued before the
+        # block was seen would otherwise still put its request on the wire. This
+        # closes all but the requests already in flight when the block landed.
+        if blocked.is_set():
+            raise BlockedError("skipped — run already stopped by a block")
+        segments, lang, generated, timing, source = fetch_with_args(
+            api, t["video_id"], args)
         return save(t, segments, lang, generated, timing, source), timing, source
 
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
@@ -509,7 +688,7 @@ def run_serial(api, todo, misses, args):
         vid = t["video_id"]
         label = t["title"][:52]
         try:
-            segments, lang, generated, timing, source = fetch_one(api, vid, args.source, args.proxy)
+            segments, lang, generated, timing, source = fetch_with_args(api, vid, args)
             words = save(t, segments, lang, generated, timing, source)
             ok += 1
             print(f"[{i}/{len(todo)}] ok   {words:>6,}w {source:<5} {timing:<9} {label}")
