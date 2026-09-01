@@ -47,6 +47,8 @@ kb/
     ├── fetch_transcripts.py      YouTube captions -> transcripts/   (run locally)
     ├── build_index.py            everything      -> talks.db + browser index
     ├── query.py                  ranked search from the terminal
+    ├── excerpt.py                the parts of a talk that answer a question
+    ├── test_excerpt.py           offline checks for excerpt.py's budget
     └── uitest/                   browser tests for index.html
 ```
 
@@ -92,19 +94,41 @@ python3 query.py "ai driven sdlc"
 python3 query.py "spec driven development" -n 20
 python3 query.py "agents" --track "AI Agents" --type Keynote/Talk
 python3 query.py "code review" --json          # for scripts and agents
+python3 query.py "code review" --brief         # just enough to choose a talk
 ```
 
 Both the abstracts and the transcripts are searched. Transcript hits carry the
 timestamp, so results deep-link into the video. FTS5 syntax works:
 `"exact phrase"`, `OR`, `NOT`, `prefix*`.
 
+Then read the talks you picked — without reading them whole:
+
+```bash
+python3 excerpt.py 913 844 -q "spec driven development"
+python3 query.py "agent memory" -n 6 --ids | xargs python3 excerpt.py -q "agent memory"
+```
+
+`excerpt.py` prints a talk's metadata, its abstract, its opening minute and a
+window of speech either side of each passage that matched, each deep-linked to
+the second, and closes with `499 of 4767 words (10%)` so a thin excerpt is
+visible as one. The passages are ranked by the same bm25 that ranked the talk,
+restricted to that talk — what you read is what put the talk in the results.
+`--full` gives the whole transcript when that is genuinely what you want.
+
+This matters most for agents, which pay for every word: a talk file averages
+28 KB, about 7,000 tokens, and eight of them read whole is ~60k tokens against
+~8k of excerpts. Over eight topics and 43 talks, 138 of 138 search-ranked
+moments landed inside the excerpt, on 20% of the words. `python3
+test_excerpt.py` checks the window budget offline — the bug it guards against
+returns a *correct* answer at ten times the price, with nothing saying so.
+
 ### With Claude Code
 
 The `conference-talks` skill (`.claude/skills/conference-talks/`, at the root of
 this repo, so any Claude Code session started here loads it) drives `query.py`
-and then reads the matching talk files, which is what you want for questions like
-*"what do different speakers think about AI-driven SDLC"* — retrieval finds the
-talks, the model compares the positions.
+and then `excerpt.py`, which is what you want for questions like *"what do
+different speakers think about AI-driven SDLC"* — retrieval finds the talks and
+the passages, the model compares the positions.
 
 ## Rebuilding
 

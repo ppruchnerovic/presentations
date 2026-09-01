@@ -11,8 +11,11 @@ Two layers are searched and merged:
     python3 query.py "agents" --track "AI Agents" --type Keynote/Talk
     python3 query.py "code review" --no-moments    # just the talks, no timestamps
     python3 query.py "code review" --json          # for scripts and agents
+    python3 query.py "code review" --json --brief  # the same choice, a third of the bytes
+    python3 query.py "code review" --ids | xargs python3 excerpt.py -q "code review"
 
-Flags: -n/--limit, --track, --type, --stage, --event, --no-moments, --json.
+Flags: -n/--limit, --track, --type, --stage, --event, --no-moments, --json,
+--brief, --ids.
 Facet values are matched exactly and case-sensitively; a value the corpus does
 not have is an error that lists the ones it does.
 
@@ -47,10 +50,13 @@ SEG_ROWS = 1500
 SEG_PER_HIT = 50
 
 
-def fts_query(raw: str) -> str:
-    """Pass FTS5 operators through, otherwise AND the bare words together."""
-    if re.search(r'["*]|\b(OR|NOT|AND|NEAR)\b', raw):
-        return raw
+# A query that names its own operators is passed through untouched — it says
+# what it wants, so it is neither rewritten nor relaxed.
+EXPLICIT_RE = re.compile(r'["*]|\b(OR|NOT|AND|NEAR)\b')
+
+
+def query_words(raw: str, warn: bool = True) -> list[str]:
+    """The bare words of a query, de-duplicated and capped."""
     words, seen = [], set()
     for w in re.findall(r"[\w'+#.-]+", raw):
         if w.lower() not in seen:  # repeating a term only makes FTS5 work harder
@@ -59,10 +65,38 @@ def fts_query(raw: str) -> str:
     if not words:
         raise SystemExit("empty query")
     if len(words) > MAX_TERMS:
-        print(f"query has {len(words)} terms — searching the first {MAX_TERMS}",
-              file=sys.stderr)
+        if warn:  # the second caller of the same query would say it twice
+            print(f"query has {len(words)} terms — searching the first {MAX_TERMS}",
+                  file=sys.stderr)
         words = words[:MAX_TERMS]
-    return " AND ".join(f'"{w}"' for w in words)
+    return words
+
+
+def fts_query(raw: str) -> str:
+    """Pass FTS5 operators through, otherwise AND the bare words together."""
+    if EXPLICIT_RE.search(raw):
+        return raw
+    return " AND ".join(f'"{w}"' for w in query_words(raw))
+
+
+def relaxed_query(raw: str) -> str | None:
+    """The same query as an OR of its content words, or None if it must not be
+    relaxed.
+
+    ANDing is right for ranking *talks*: every term has to appear somewhere in
+    the record. Inside a single ~28-word segment it is nearly always too
+    strict — "eval driven development" is spoken across two of them — so a
+    caller that matches segments within one talk (`excerpt.py`) needs a
+    fallback, or it finds nothing and concludes the talk never says it. Still
+    ranked by bm25, so the passage carrying more of the terms still wins.
+    """
+    if EXPLICIT_RE.search(raw):
+        return None
+    words = query_words(raw, warn=False)
+    if len(words) < 2:  # one word cannot be relaxed into anything but itself
+        return None
+    content = [w for w in words if w.lower() not in wadkb.STOPWORDS] or words
+    return " OR ".join(f'"{w}"' for w in content)
 
 
 def search(con, q: str, limit: int, filters: dict) -> list[dict]:
@@ -163,6 +197,34 @@ def plain_snip(s: str) -> str:
     return " ".join((s or "").split()).replace("[[", "").replace("]]", "")
 
 
+# What --brief keeps. Choosing *which* talks to open needs different fields
+# from reading one: the tags, the companies, the stage, the type and the
+# session page are all one lookup by id away, and across a dozen hits they are
+# most of the bytes and none of the decision.
+BRIEF = ("id score title speakers track duration_min recording_url video_id "
+         "event_name has_transcript abstract_snippet").split()
+
+# Moments kept per hit under --brief. One passage says whether the talk is
+# about the query; the fourth says it again.
+BRIEF_MOMENTS = 2
+
+
+def emit_json(hits: list[dict], show_moments: bool, brief: bool = False) -> None:
+    """The default shape is a contract — `uitest/suite-ranking.js` compares its
+    own ranking against it — so --brief subsets that shape rather than
+    reshaping it."""
+    for h in hits:
+        h["tags"] = [x for x in (h["tags"] or "").split(", ") if x]
+        h["abstract_snippet"] = plain_snip(h["abstract_snippet"])
+        h["moments"] = ([{"start": m["start"], "text": plain_snip(m["text"])}
+                         for m in h["moments"]] if show_moments else [])
+    if brief:
+        hits = [{**{k: h[k] for k in BRIEF if k in h},
+                 "moments": h["moments"][:BRIEF_MOMENTS]} for h in hits]
+    json.dump(hits, sys.stdout, ensure_ascii=False, indent=None if brief else 2)
+    print()
+
+
 def positive_int(value: str) -> int:
     """A limit of 0 or less is never what was meant: 0 looked like 'no matches'
     and a negative one sliced results off the tail."""
@@ -201,6 +263,10 @@ def main() -> None:
     ap.add_argument("--no-moments", dest="moments", action="store_false",
                     help="hide the timestamped transcript hits")
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--brief", action="store_true",
+                    help="only the fields and passages needed to choose a talk")
+    ap.add_argument("--ids", action="store_true",
+                    help="print only the talk ids, one per line — feeds excerpt.py")
     args = ap.parse_args()
 
     if not wadkb.TALKS_DB.exists():
@@ -222,16 +288,15 @@ def main() -> None:
         "stage": args.stage, "event_slug": args.event_slug,
     })
 
-    if args.json:
+    if args.ids:
+        # So that reading the hits is a pipe rather than eight ids retyped:
+        #   query.py "…" --ids | xargs python3 excerpt.py -q "…"
         for h in hits:
-            h["tags"] = [x for x in (h["tags"] or "").split(", ") if x]
-            h["abstract_snippet"] = plain_snip(h["abstract_snippet"])
-            h["moments"] = ([{"start": m["start"], "text": plain_snip(m["text"])}
-                             for m in h["moments"]] if args.moments else [])
-        json.dump(hits, sys.stdout, ensure_ascii=False, indent=2)
-        print()
+            print(h["id"])
+    elif args.json:
+        emit_json(hits, args.moments, args.brief)
     else:
-        render(hits, args.moments)
+        render(hits, args.moments and not args.brief)
 
 
 if __name__ == "__main__":
