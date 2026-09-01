@@ -1,10 +1,18 @@
 // Screen-reader and keyboard access, plus text contrast.
 //
 // Also the partial-transcript-coverage path, which no amount of clicking can
-// reach today: every talk has a transcript, so the "Transcript only" toggle
+// reach today: all 358 talks have a transcript, so the "Transcript only" toggle
 // and the per-card "transcript" badge stay hidden. The catalogue response is
 // rewritten on the way in to simulate the refresh that brings in a talk whose
 // captions could not be fetched.
+//
+// READ THIS BEFORE TRUSTING THE FIRST BLOCK. Its coverage is against a mock and
+// nothing else: the interception below zeroes `t.w` on every third talk, which
+// is why this suite reports "238 full transcripts" while the site reports 358.
+// Production data cannot reach that toggle or that badge, so no check here says
+// anything about how the shipped page behaves. The production case — full
+// coverage, therefore the toggle hidden and filtering nothing — is asserted in
+// suite-filters.js instead, and the two need to be read together.
 
 const L = require('./lib');
 
@@ -25,6 +33,8 @@ L.suite('a11y', async browser => {
   // ---------- partial transcript coverage ----------
   {
     const page = await L.newPage(browser);
+    // Every third talk loses its transcript word count. From here to the end of
+    // this block the page is running on data the site never serves.
     await page.route('**/data/search-meta.json', async route => {
       const json = await (await route.fetch()).json();
       json.talks.forEach((t, i) => { if (i % 3 === 0) t.w = 0; });

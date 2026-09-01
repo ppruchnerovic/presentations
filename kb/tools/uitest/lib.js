@@ -24,6 +24,7 @@ function check(name, cond, detail = '') {
 // the checks below assert these stayed empty.
 async function newPage(browser, opts = {}) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, ...opts });
+  await ctx.addInitScript(RENDER_PROBE);
   const page = await ctx.newPage();
   page.__console = [];
   page.__errors = [];
@@ -47,12 +48,65 @@ async function boot(page, hash = '') {
 }
 
 // Typing is debounced by 140ms and the shard fetch is async, so a search is not
-// done when fill() returns.
-async function search(page, q) {
+// done when fill() returns — something has to wait for the answer to land.
+//
+// The page's only settle signal is the render itself: render() reassigns
+// #results.innerHTML, which always replaces that element's children, so one
+// mutation of #results means exactly one repaint of the result list. This probe
+// counts them. (The obvious-looking alternative, waiting for `#results .spinner`
+// to clear, waits for nothing at all: the only spinner in the page belongs to
+// the per-talk moment loader, so during a search that selector is already empty
+// and the wait resolves on its first evaluation.)
+const RENDER_PROBE = () => {
+  window.__renders = 0;
+  const attach = () => {
+    const res = document.querySelector('#results');
+    if (!res) { setTimeout(attach, 10); return; }
+    new MutationObserver(() => { window.__renders++; }).observe(res, { childList: true });
+  };
+  attach();
+};
+
+// A search that never settles is a failure, not something to shrug off: the
+// suite would otherwise carry on and assert against the *previous* query's DOM.
+// Every query the suites run does re-render — an empty or stopword-only query
+// renders the whole catalogue, a hopeless one renders the empty state — so
+// waiting is the default. `{ settle: false }` is the explicit opt-out for a call
+// site that genuinely expects the results list to be left alone.
+async function search(page, q, { settle = true, timeout = 15000 } = {}) {
+  const before = await page.evaluate(() => window.__renders);
+  if (typeof before !== 'number') {
+    throw new Error('search(): no render probe on this page — it must come from newPage().');
+  }
   await page.fill('#q', q);
-  await page.waitForTimeout(450);
-  await page.waitForFunction(() => !document.querySelector('#results .spinner'),
-    null, { timeout: 15000 }).catch(() => {});
+  if (!settle) { await page.waitForTimeout(450); return; }
+
+  const t0 = Date.now();
+  try {
+    await page.waitForFunction(n => window.__renders > n, before, { timeout, polling: 25 });
+  } catch (_) {
+    const seen = await page.evaluate(() => ({
+      input: document.querySelector('#q')?.value,
+      status: (document.querySelector('#status')?.textContent || '').trim().slice(0, 80),
+      cards: document.querySelectorAll('#results .card').length,
+      empty: document.querySelector('.empty h3')?.textContent || null,
+    })).catch(e => ({ unreadable: String(e) }));
+    throw new Error(`search(${JSON.stringify(q)}) never re-rendered #results: ` +
+      `waited ${Date.now() - t0}ms of ${timeout}ms and the render count stayed at ${before}. ` +
+      `The list still shows ${JSON.stringify(seen)} — anything asserted from here on ` +
+      `would be asserting against the query before this one.`);
+  }
+  // render() is synchronous, so the mutation means the DOM, the status line and
+  // the hash are all already written; this only lets the layout settle.
+  await page.waitForTimeout(60);
+}
+
+// page.__errors accumulates for the life of the page, so `__errors.length === 0`
+// reddens every check after the one that actually threw. Snapshot first, and a
+// check can then speak only about its own step.
+function sinceErrors(page) {
+  const mark = page.__errors.length;
+  return () => page.__errors.slice(mark);
 }
 
 const statusText = page => page.textContent('#status');
@@ -81,7 +135,12 @@ async function suite(name, body) {
   process.exit(failed ? 1 : 0);
 }
 
+// locator('.empty h3').textContent() blocks for the full locator timeout when
+// there is no empty state, which is the interesting case as often as not.
+const emptyState = page =>
+  page.evaluate(() => document.querySelector('.empty h3')?.textContent ?? null);
+
 module.exports = {
-  BASE, chromium, check, newPage, boot, search,
-  statusText, cardCount, titles, cardIds, resultCount, meta, suite,
+  BASE, chromium, check, newPage, boot, search, sinceErrors,
+  statusText, cardCount, titles, cardIds, resultCount, emptyState, meta, suite,
 };
