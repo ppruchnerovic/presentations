@@ -11,12 +11,12 @@ ends and what is left.
 | Metadata pipeline (`sync_agenda.py`) | Done. 358 talks with recordings, from the public API. |
 | Per-talk markdown | Done. Regenerated from `talks.json` on every sync. |
 | Search indexes (`build_index.py`) | Done. SQLite FTS5 + sharded browser index. |
-| CLI (`query.py`) | Done. Auto-builds the index on first use. |
-| Browser UI (`index.html`) | Done. Ranks on passages, not just whole transcripts. Shares the site's dark palette and type — see below. |
-| Browser UI tests (`tools/uitest/`) | Done. ~165 checks over search, filters, sorting, abstracts, moments, pagination, shareable URLs, resilience and a11y. `node run.js`. |
-| Claude Code skill | Done — `conference-talks`, in this repo at `.claude/skills/conference-talks/`. Moved here from `second-brain` so the skill ships with the corpus it queries. |
-| Transcripts | All 358 fetched with **exact** timings via `youtube-transcript-api`. See below. |
-| Scheduled refresh | `.github/workflows/kb-refresh.yml`, weekly, metadata only. |
+| CLI (`query.py`) | Done. Auto-builds the index on first use. Drops stopwords, splits hyphens, tops a short list up with flagged relaxed hits, `--facets`. `test_query.py` covers the parsing offline. |
+| Browser UI (`index.html`) | Done. Ranks on passages, not just whole transcripts; "Find this in the talk" ranks ±2-caption windows. Shares the site's dark palette and type — see below. |
+| Browser UI tests (`tools/uitest/`) | Done. 171 checks over search, filters, sorting, abstracts, moments, pagination, shareable URLs, resilience and a11y. `node run.js`. |
+| Claude Code skill | Done — `conference-talks`, in this repo at `.claude/skills/conference-talks/`. Moved here from `second-brain` so the skill ships with the corpus it queries. Step 1 is `--json --brief`; searches topic words, not questions. |
+| Transcripts | All 358 fetched with **exact** timings via `youtube-transcript-api`. `tools/fetch_transcripts.py` is now a wrapper over the `conference-transcripts` skill's fetcher. See below. |
+| Scheduled refresh | `.github/workflows/kb-refresh.yml`, manual dispatch or a push to `kb/tools/`, metadata only. Rebases before pushing; publishes under the same concurrency group as `pages.yml`. |
 
 ## Visual design — shared with the rest of the site
 
@@ -224,6 +224,72 @@ python3 sync_agenda.py && python3 build_index.py
   Measured over eight topics and 43 talks: 138 of 138 search-ranked moments land
   inside the excerpt, on 20% of the words; the same eight ids cost ~8k tokens as
   excerpts against ~60k as whole files.
+- **A bare query is content words, ANDed; the tail of a short list is
+  relaxed.** `fts_query` used to AND every word, stopwords included, so "what
+  do speakers think about vibe coding" returned nothing against a corpus with
+  eight talks on it. Now `content_words` drops `wadkb.STOPWORDS` (keeping them
+  only when nothing else is left), `query_words` splits on `-`, `/` and `.`
+  (quoted whole, `"AI-driven"` was the *phrase* "ai driven" and stricter than
+  the spaced form — 0 hits against 1), and when the strict AND fills fewer
+  than `-n` rows `search()` runs `relaxed_query`'s OR and **appends** its
+  hits, flagged `relaxed`. Appended, never interleaved: the strict order is
+  the contract `uitest/suite-ranking.js` measures the browser against, and
+  that suite now filters `relaxed` rows out before comparing, because the
+  browser has no relaxed mode. Explicit FTS5 syntax is still passed through
+  untouched. `test_query.py` pins all of this without a database.
+- **Colour only on a terminal.** `render()` wrote `\033[…]` around every
+  title and hit whatever stdout was, so an agent reading text output got
+  escape codes. `COLOR = isatty() and not NO_COLOR`; piped, the `[[…]]` hit
+  markers print as they are.
+- **Singleton transcript terms are kept when they are words.** The browser
+  index pruned any term with one posting of frequency one — 8,983 of 23,027
+  terms, 6,677 of them ordinary 4–12-letter words (`torvalds`, `amiga`,
+  `berghain`…). Because `search()` in `index.html` requires every query term
+  to match somewhere, a search for such a word showed "Nothing matched" while
+  the CLI found it. `keep_singleton` keeps alphabetic terms of 4+ letters and
+  still prunes digits and fragments. Cost, measured: 14,044 → 21,108 terms,
+  `tindex/` 4.19 → 4.49 MB raw and 1.39 → 1.45 MB gzipped over 27 shards.
+  `suite-search.js` checks that `torvalds` finds exactly talk 586.
+- **"Find this in the talk" scores the window it shows.** `showMoments()`
+  scored each raw caption — 6.4 words on average — and displayed three, so a
+  two-word query almost never scored a co-occurrence even though that is
+  what ranked the talk. It now requires the centre caption to say one of the
+  words (the deep link stays there) and scores the distinct query terms in
+  the ±`MO_SPAN` = 2 captions it displays, about one indexed passage. On
+  `agent security` the old scorer offered 2 of 6 moments with both words,
+  the new one 6 of 6; on a phrase like `vibe coding` the two agree, which is
+  why the test in `suite-moments.js` uses the former.
+- **A short tail folds into the previous passage.** `to_passages()` flushed
+  whatever was left as its own passage, so 115 talks ended on a ≤7-word one
+  ("Thank you. [applause]") that bm25's length normalisation would have
+  over-scored for any real word landing there. A remainder under
+  `PASSAGE_WORDS / 2` now joins the passage before it: 53,982 → 53,815
+  segments.
+- **The manifest loads before the metadata is tokenised.** `boot()` built
+  the per-field token sets before `STOP` was set from the manifest, so those
+  sets held stopwords that a query, tokenised later, never had. No visible
+  effect today — a stopword in a field set can only fail to match — but the
+  two tokenisations now agree, and the two fetches run in parallel.
+- **One fetcher.** `tools/fetch_transcripts.py` and the
+  `conference-transcripts` skill's `scripts/fetch_transcripts.py` had drifted
+  649 diff lines apart; the skill's copy had `--probe` (which this file and
+  the README told the operator to use, and the kb copy lacked) and atomic
+  writes, the kb copy had neither. The kb file is now a ~60-line wrapper that
+  loads the skill's module by path, hands it the work list from `talks.json`
+  (with `file: <talk_id>` so the output keeps its `<talk_id>.json` name and
+  `talk_id` field) and forces `--out data/transcripts`. The skill's `main()`
+  takes `argv` and `work` for that purpose and returns the fetched count.
+  Misses are keyed by video id there; the corpus's `_misses.json` was empty,
+  so nothing needed migrating. `wadkb.write_json()` is atomic too now
+  (tmp + `os.replace`), so nothing under `data/` can be left truncated by a
+  Ctrl-C.
+- **The refresh workflow rebases, and both publishers share a group.**
+  `kb-refresh.yml` ran `git push` without pulling, so a commit landing on
+  `main` mid-run failed the push and skipped the mirror. It now
+  `pull --rebase`s first, and its gh-pages push is a separate job in the
+  `pages` concurrency group with `pages.yml`; both check out the *tip* of
+  `main` rather than the triggering commit, so whichever runs last publishes
+  the newest tree.
 - Talks without a recording (135 of 493) are excluded by design; `--keep-all`
   overrides.
 
@@ -244,6 +310,7 @@ python3 sync_agenda.py && python3 build_index.py
   so far. If "find talks that mean X without saying X" becomes a real need,
   embeddings over the transcript chunks are the next step — the chunking in
   `segments` is already the right granularity.
+
 Previously listed here and now done: the static site ranked whole talks by
 transcript relevance worse than the CLI, because it scored each transcript as
 one bag of words while `query.py` scores individual ~28-word passages. A talk that
@@ -264,3 +331,27 @@ defect: `talks.db` tokenizes with Porter stemming, the browser matches on token
 prefixes, and their field weights differ. Overlap of the top 10 is around 40%.
 Use the CLI when you want `query.py`'s exact semantics; the site is now a fair
 tool for precision work rather than a rough one.
+
+## Review of 2026-09-01 — what landed, and what was tried and is not worth repeating
+
+A full review of the solution ran against the corpus at 358 talks. Every
+item it raised has landed and is recorded above under *Design decisions*:
+question-shaped and hyphenated queries, the relaxed tail, `--brief` in text
+mode, colour on pipes, `--facets`; singleton terms, window-scored moments,
+tail passages, the boot order; the fetcher wrapper and atomic writes; the
+workflow rebase and shared publish group; and the skill rewritten to match
+the flags as they now behave. Baseline after: `test_query.py` and
+`test_excerpt.py` pass, `uitest/run.js` 171/171, `build_index.py`
+byte-idempotent, ranking agreement with the CLI mean 0.73 over the eight
+measured queries (0.72 before).
+
+One thing the review tried and rejected, so nobody tries it again:
+
+A **whole-transcript BM25 layer** (one FTS5 document per talk, blended into
+`search()` at weight 3.0) was tested in memory on "agent security",
+"spec driven development", "vibe coding" and "code review". It did not change
+the top five on any of them. The case it was meant to fix — "The day the
+chatbot asked for sudo" ranking 6th for `agent security` — is a vocabulary
+problem the skill's `OR` guidance already handles, not a ranking-signal
+problem. Do not add the layer; it would grow `talks.db` by the transcript
+text for no measured gain.

@@ -44,10 +44,12 @@ kb/
 └── tools/
     ├── wadkb.py                  shared helpers
     ├── sync_agenda.py            conference API  -> talks.json + markdown
-    ├── fetch_transcripts.py      YouTube captions -> transcripts/   (run locally)
+    ├── fetch_transcripts.py      YouTube captions -> transcripts/   (run locally;
+    │                             a wrapper over the conference-transcripts skill)
     ├── build_index.py            everything      -> talks.db + browser index
     ├── query.py                  ranked search from the terminal
     ├── excerpt.py                the parts of a talk that answer a question
+    ├── test_query.py             offline checks for how a query is parsed and filled
     ├── test_excerpt.py           offline checks for excerpt.py's budget
     └── uitest/                   browser tests for index.html
 ```
@@ -93,13 +95,21 @@ cd kb/tools
 python3 query.py "ai driven sdlc"
 python3 query.py "spec driven development" -n 20
 python3 query.py "agents" --track "AI Agents" --type Keynote/Talk
+python3 query.py --facets                      # every track, type and stage, with counts
 python3 query.py "code review" --json          # for scripts and agents
-python3 query.py "code review" --brief         # just enough to choose a talk
+python3 query.py "code review" --json --brief  # just enough to choose a talk
 ```
 
 Both the abstracts and the transcripts are searched. Transcript hits carry the
-timestamp, so results deep-link into the video. FTS5 syntax works:
-`"exact phrase"`, `OR`, `NOT`, `prefix*`.
+timestamp, so results deep-link into the video. A bare query ANDs its words,
+minus stopwords, so a question works as a search — "what do speakers think
+about vibe coding" searches for the four words that are not scaffolding — and
+a hyphen is a space, so "AI-driven" finds what "ai driven" finds. When the
+strict AND fills fewer than `-n` rows, the rest come from an OR of the same
+words, appended after the strict hits and marked `(relaxed)` in text and
+`"relaxed": true` in JSON. FTS5 syntax works: `"exact phrase"`, `OR`, `NOT`,
+`prefix*`; a query that uses it is passed through as written. Colour is only
+used on a terminal, so piped output is plain text.
 
 Then read the talks you picked — without reading them whole:
 
@@ -120,7 +130,9 @@ This matters most for agents, which pay for every word: a talk file averages
 ~8k of excerpts. Over eight topics and 43 talks, 138 of 138 search-ranked
 moments landed inside the excerpt, on 20% of the words. `python3
 test_excerpt.py` checks the window budget offline — the bug it guards against
-returns a *correct* answer at ten times the price, with nothing saying so.
+returns a *correct* answer at ten times the price, with nothing saying so —
+and `python3 test_query.py` checks how a query becomes a search, whose failure
+was quieter still: "no matches" against a corpus that had them.
 
 ### With Claude Code
 
@@ -157,18 +169,23 @@ second a phrase is spoken. `fetch_transcripts.py` tries three routes:
 
 ```bash
 pip install -r kb/tools/requirements.txt
+python3 kb/tools/fetch_transcripts.py --probe --source exact     # one request: is this network usable?
 python3 kb/tools/fetch_transcripts.py --source exact --retry-after 20
 ```
 
-`--source exact` refuses to fall back to estimates; `--retry-after` parks the
-run when YouTube blocks the IP and resumes where it stopped.
+`--probe` fetches one known-captioned video and says whether the network is
+worth a run; `--source exact` refuses to fall back to estimates;
+`--retry-after` parks the run when YouTube blocks the IP and resumes where it
+stopped. The script here is a thin wrapper: the fetcher itself lives in the
+`conference-transcripts` skill (`.claude/skills/conference-transcripts/`) and
+this one only tells it which videos the corpus needs and where to write them.
 
 **Expect to be rate limited.** YouTube meters the caption endpoint per egress IP
 with an allowance that refills over hours, and both exact routes draw on the
 same one. In practice a consumer connection yields ~20–25 talks before it closes;
 slowing down does not raise that number. Fetching the whole corpus took several
-sittings across three networks. Switching networks buys a fresh window, and a
-one-request probe tells you whether the current one is worth a round.
+sittings across three networks. Switching networks buys a fresh window, and
+`--probe` tells you whether the current one is worth a round.
 
 A block is **not** recorded as a miss — it says nothing about the video, so a
 plain rerun picks those talks straight back up. `data/transcripts/_misses.json`
@@ -194,7 +211,7 @@ looks exactly like a search with no results.
 ```bash
 cd kb/tools/uitest
 npm install            # playwright + chromium, ignored by git
-node run.js            # ~165 checks, about a minute
+node run.js            # ~170 checks, about a minute
 node run.js search filters      # just those suites
 KB_URL=https://ppruchnerovic.github.io/presentations/kb/ node run.js   # the live site
 ```
