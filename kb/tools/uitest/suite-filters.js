@@ -144,6 +144,24 @@ L.suite('filters', async browser => {
   L.check('stage round-trips, and tr=1 is ignored while that toggle is hidden',
     rt.stage === stage && rt.tr === false && rt.trHidden === true, JSON.stringify(rt));
 
+  // The production case for "Transcript only". suite-a11y.js exercises that
+  // toggle and the per-card "transcript" badge, but only against a catalogue it
+  // rewrites on the way in to zero every third talk's word count — with the real
+  // corpus at full coverage the control is hidden and unclickable, so nothing
+  // over there says what the shipped page does. What it must do is nothing at
+  // all: a hidden filter that quietly dropped rows would leave a shared #tr=1
+  // link returning an empty page, and no other check would notice.
+  const withTr = meta.talks.filter(t => t.w > 0).length;
+  const shown = await L.resultCount(page);
+  if (withTr === N) {
+    L.check('at full transcript coverage the hidden toggle filters nothing',
+      rt.trHidden === true && shown === expStage,
+      `${withTr}/${N} talks have a transcript · #tr=1 on "${stage}" shows ${shown}, expected ${expStage}`);
+  } else {
+    L.check('at partial transcript coverage the toggle is offered instead of hidden',
+      rt.trHidden === false, `${withTr}/${N} talks have a transcript`);
+  }
+
   await reload('#track=NoSuchTrack&sort=bogus&q=agents');
   const bad = await page.evaluate(() => ({
     track: document.querySelector('#f-track').value,

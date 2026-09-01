@@ -44,7 +44,7 @@ In this session we'll explore what headless HR looks like in practice, why the a
 *Global Employment Specialist — Remote*
 
 Christian Voigt, Global Employment Specialist at Remote.com, has been working in tech for over five years. He knows from personal experience what it’s like when relocation and on-site work are mandatory, having had to change employers because of it. That’s why he believes opportunities shouldn’t depend on where you live or work — for candidates or companies alike.
-With this perspective, Christian advises companies in Switzerland, Germany and Austria on how to achieve growth goals, retain employees affected by relocation, and make international expansion and hiring abroad simple and innovative.⁠
+With this perspective, Christian advises companies in Switzerland, Germany and Austria on how to achieve growth goals, retain employees affected by relocation, and make international expansion and hiring abroad simple and innovative.
 
 ## Transcript
 

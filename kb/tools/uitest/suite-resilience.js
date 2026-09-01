@@ -54,42 +54,100 @@ L.suite('resilience', async browser => {
   }
 
   // ---------- hostile input ----------
+  //
+  // "It did not throw" is the weakest thing that can be said about a search: an
+  // input that silently returns the wrong talks passes that bar. Each case below
+  // therefore names the result set it expects, derived from what the page
+  // promises rather than from what it happened to return — a metacharacter query
+  // must equal its declawed twin, an em dash must vanish, an AND must narrow.
+  //
+  // page.__errors accumulates for the life of the page, so asserting
+  // `__errors.length === 0` makes one throw redden every check after it and
+  // hides which input was responsible. L.sinceErrors snapshots it so each check
+  // reports only its own step.
   {
     const page = await L.newPage(browser);
     await L.boot(page);
+    const N = (await L.meta(page)).talks.length;
+
+    const outcome = async q => {
+      const since = L.sinceErrors(page);
+      await L.search(page, q);
+      return {
+        q,
+        n: await L.resultCount(page),
+        ids: await L.cardIds(page),
+        empty: await L.emptyState(page),
+        errs: since(),
+      };
+    };
+    const threw = o => o.errs.length ? ` · threw: ${o.errs.join('; ')}` : '';
+    const same = (a, b) => a.n === b.n && JSON.stringify(a.ids) === JSON.stringify(b.ids);
 
     // The status line echoes the query back, so it is the obvious injection point.
+    const injected = L.sinceErrors(page);
     await L.search(page, '<img src=x onerror=alert(1)> kubernetes');
     const status = await page.evaluate(() => document.querySelector('#status').innerHTML);
     const smuggled = await page.evaluate(() => document.querySelectorAll('#status img, #results img').length);
-    L.check('the echoed query is HTML-escaped', !/<img/i.test(status) && smuggled === 0,
-      status.replace(/\s+/g, ' ').slice(0, 110));
+    L.check('the echoed query is HTML-escaped',
+      !/<img/i.test(status) && smuggled === 0 && injected().length === 0,
+      status.replace(/\s+/g, ' ').slice(0, 110) + (injected().length ? ` · threw: ${injected().join('; ')}` : ''));
 
+    const scripted = L.sinceErrors(page);
     await L.search(page, '"><script>window.__x=1</script>');
     L.check('script injection through the query does not execute',
-      !(await page.evaluate(() => window.__x === 1)));
+      !(await page.evaluate(() => window.__x === 1)) && scripted().length === 0,
+      scripted().join('; ') || 'window.__x unset');
 
-    // highlight() builds a RegExp out of the query terms.
-    for (const q of ['c++ (*)', 'a\\b', '[test]', '$^.*+?']) {
-      await L.search(page, q);
+    // highlight() builds a RegExp out of the query terms and tokenize() keeps
+    // only [a-z0-9+#.-], so every one of these has a plain-text twin that must
+    // return the identical result set. Compiled rather than escaped, `c++ (*)`
+    // would throw "nothing to repeat" and `[test]` would quietly match t, e or s
+    // — both of which this catches, where counting exceptions did not.
+    for (const [q, twin] of [['c++ (*)', 'c++'], ['a\\b', ''], ['[test]', 'test'], ['$^.*+?', '']]) {
+      const hostile = await outcome(q);
+      const plain = await outcome(twin);
       L.check(`regex metacharacters in "${q}" are treated literally`,
-        page.__errors.length === 0, page.__errors.join(';'));
+        same(hostile, plain) && hostile.errs.length === 0,
+        `${hostile.n} hits vs ${plain.n} for ${twin ? `"${twin}"` : 'no query at all'}` +
+        ` · top ids [${hostile.ids.slice(0, 3)}] vs [${plain.ids.slice(0, 3)}]${threw(hostile)}`);
     }
 
-    await L.search(page, 'a'.repeat(400));
-    L.check('a 400-character query is handled', page.__errors.length === 0,
-      await page.locator('.empty h3').textContent().catch(() => '(results)'));
+    const long = await outcome('a'.repeat(400));
+    L.check('a 400-character query matches nothing and shows the empty state',
+      long.n === 0 && long.empty === 'Nothing matched' && long.errs.length === 0,
+      `${long.n} hits, empty state ${JSON.stringify(long.empty)}${threw(long)}`);
 
-    await L.search(page, '日本語 テスト');
-    L.check('non-Latin input does not throw', page.__errors.length === 0,
-      (await L.statusText(page)).trim().slice(0, 40) || 'no matches');
+    // The tokeniser is ASCII-only, so a CJK query yields no terms at all. That
+    // is the same road a stopword-only query takes: browse the catalogue rather
+    // than claim nothing matched.
+    const cjk = await outcome('日本語 テスト');
+    const browsing = await outcome('');
+    L.check('non-Latin input falls back to browsing the catalogue, not to an empty result',
+      cjk.n === N && same(cjk, browsing) && cjk.errs.length === 0,
+      `${cjk.n} hits vs ${N} talks, and the same first ids as no query at all` +
+      ` [${cjk.ids.slice(0, 3)}] vs [${browsing.ids.slice(0, 3)}]${threw(cjk)}`);
 
-    await L.search(page, 'ai — agents');
-    L.check('punctuation-only tokens are dropped', page.__errors.length === 0);
+    const dashed = await outcome('ai — agents');
+    const spaced = await outcome('ai agents');
+    L.check('punctuation-only tokens are dropped, not searched for',
+      same(dashed, spaced) && dashed.errs.length === 0,
+      `"ai — agents"=${dashed.n} vs "ai agents"=${spaced.n}` +
+      ` · top ids [${dashed.ids.slice(0, 3)}] vs [${spaced.ids.slice(0, 3)}]${threw(dashed)}`);
 
-    await L.search(page, 'ai agents security testing kubernetes rust typescript observability');
-    L.check('an eight-term AND query resolves', page.__errors.length === 0,
-      (await L.statusText(page)).trim().slice(0, 55) || 'empty state');
+    // Every term has to appear somewhere, so eight of them can only ever narrow.
+    const TERMS = ['ai', 'agents', 'security', 'testing', 'kubernetes', 'rust',
+      'typescript', 'observability'];
+    const singles = {};
+    for (const t of TERMS) singles[t] = (await outcome(t)).n;
+    const narrowest = Math.min(...Object.values(singles));
+    const all8 = await outcome(TERMS.join(' '));
+    L.check('an eight-term AND query narrows to a subset of its rarest term',
+      all8.n <= narrowest && all8.errs.length === 0 &&
+      (all8.n === 0 ? all8.empty === 'Nothing matched' : all8.ids.length > 0),
+      `8 terms = ${all8.n} hits, rarest single term = ${narrowest} ` +
+      `(${Object.entries(singles).map(([t, n]) => `${t}:${n}`).join(' ')})` +
+      `, empty state ${JSON.stringify(all8.empty)}${threw(all8)}`);
     await page.close();
   }
 

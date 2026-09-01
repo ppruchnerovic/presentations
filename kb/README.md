@@ -37,7 +37,9 @@ kb/
 │                                 postings carry passage positions, so the browser
 │                                 can rank passages, not just whole transcripts
 │                                 (captions are grouped into ~28-word passages
-│                                 at index time — see STATE.md)
+│                                 at index time — PASSAGE_WORDS = 25 is the
+│                                 threshold a passage flushes at, not the
+│                                 average; see STATE.md)
 ├── talks/<event>/<id>-<slug>.md  one readable file per talk
 └── tools/
     ├── wadkb.py                  shared helpers
@@ -114,7 +116,9 @@ python3 build_index.py        # rebuild both search indexes
 ```
 
 `sync_agenda.py` and `build_index.py` are idempotent — rerunning gives byte-identical
-output, so a git diff shows exactly what the conference changed.
+output, so a git diff shows exactly what the conference changed. Each tool
+locates `kb/` from its own file, so the `cd` is a convenience — running
+`python3 kb/tools/build_index.py` from the repo root does the same thing.
 
 ### Transcripts, and YouTube's quota
 
@@ -128,8 +132,8 @@ second a phrase is spoken. `fetch_transcripts.py` tries three routes:
 | `kome.ai` | **estimated** — interpolated from word position | anywhere, including CI and cloud containers |
 
 ```bash
-pip install -r tools/requirements.txt
-cd kb/tools && python3 fetch_transcripts.py --source exact --retry-after 20
+pip install -r kb/tools/requirements.txt
+python3 kb/tools/fetch_transcripts.py --source exact --retry-after 20
 ```
 
 `--source exact` refuses to fall back to estimates; `--retry-after` parks the
@@ -152,8 +156,10 @@ not *upgrade* anything. To redo a talk, delete its file first. Afterwards rerun
 `sync_agenda.py` (to inline transcripts into the markdown) and `build_index.py`,
 and commit.
 
-The `Refresh talk metadata` workflow keeps the metadata current automatically;
-it deliberately does not attempt transcripts.
+The `Refresh talk metadata` workflow does the metadata half of this on GitHub,
+but only when asked: it ran on a weekly cron until the conference ended, and now
+fires on a manual dispatch from the Actions tab or a push touching `kb/tools/`.
+It deliberately does not attempt transcripts.
 
 ## Testing the browser UI
 

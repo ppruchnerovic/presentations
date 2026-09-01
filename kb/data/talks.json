@@ -1817,7 +1817,7 @@
           "name": "Mike Bursell",
           "company": "Confidential Computing Consortium",
           "position": "Executive Director",
-          "bio": "﻿Mike Bursell is the Executive Director of the Confidential Computing Consortium. He is one of the co-founders of the Enarx project (https://enarx.dev), and was CEO and co-founder of Profian, a start-up based on Enarx.  He has previously served on the Governing Boards of the CCC and the Bytecode Alliance and currently holds advisory board roles with various start-ups.  Previous companies include Red Hat, Intel and Citrix, with roles in security, virtualisation and networking.\n\nMike is author of \"Trust in Computer Systems and the Cloud\", published by Wiley in 2021.",
+          "bio": "Mike Bursell is the Executive Director of the Confidential Computing Consortium. He is one of the co-founders of the Enarx project (https://enarx.dev), and was CEO and co-founder of Profian, a start-up based on Enarx.  He has previously served on the Governing Boards of the CCC and the Bytecode Alliance and currently holds advisory board roles with various start-ups.  Previous companies include Red Hat, Intel and Citrix, with roles in security, virtualisation and networking.\n\nMike is author of \"Trust in Computer Systems and the Cloud\", published by Wiley in 2021.",
           "image": "https://imagedelivery.net/p2Gwf4g3bNtyXUmnEu9Kdw/speakers/world-congress-europe/269095a0-109d-4fdc-af52-62dea16c8b45/card?format=auto",
           "links": {}
         }
@@ -10970,7 +10970,7 @@
           "name": "Christian Voigt",
           "company": "Remote",
           "position": "Global Employment Specialist",
-          "bio": "Christian Voigt, Global Employment Specialist at Remote.com, has been working in tech for over five years. He knows from personal experience what it’s like when relocation and on-site work are mandatory, having had to change employers because of it. That’s why he believes opportunities shouldn’t depend on where you live or work — for candidates or companies alike.\nWith this perspective, Christian advises companies in Switzerland, Germany and Austria on how to achieve growth goals, retain employees affected by relocation, and make international expansion and hiring abroad simple and innovative.⁠",
+          "bio": "Christian Voigt, Global Employment Specialist at Remote.com, has been working in tech for over five years. He knows from personal experience what it’s like when relocation and on-site work are mandatory, having had to change employers because of it. That’s why he believes opportunities shouldn’t depend on where you live or work — for candidates or companies alike.\nWith this perspective, Christian advises companies in Switzerland, Germany and Austria on how to achieve growth goals, retain employees affected by relocation, and make international expansion and hiring abroad simple and innovative.",
           "image": "https://imagedelivery.net/p2Gwf4g3bNtyXUmnEu9Kdw/speakers/world-congress-europe/7003f9c4-5b6b-4377-9a6d-61ed1494941b/card?format=auto",
           "links": {}
         }
@@ -13511,7 +13511,7 @@
       "id": 988,
       "slug": "teaching-an-llm-to-review-code-like-a-senior-engineer",
       "title": "Teaching an LLM to review code … like a Senior Engineer!",
-      "description": "There’s no doubt LLMs can generate plausible, working code – but can we trust them to review it? Being a helpful assistant is deeply ingrained in an LLM’s nature, but when it comes to code reviews, this works against us. What could have been a simple Pull Request approval turns into a lavish, flattering, one-page-long description of how great the code is, how extensive the test coverage is, and how brilliant the architectural choices are. No one has the time to read those reviews, and ultimately engineers stop paying attention. And even if the LLM does surface a real issue, chances are it’s going to be lost in the noise of dozens of good-to-haves and minor, irrelevant nitpicks. This is a story of how we built an LLM code review bot that behaves as a senior engineer – surfacing important, actionable violations of human-curated guidance and maximising signal-to-noise ratio.",
+      "description": "There’s no doubt LLMs can generate plausible, working code – but can we trust them to review it?\n\nBeing a helpful assistant is deeply ingrained in an LLM’s nature, but when it comes to code reviews, this works against us.\n\nWhat could have been a simple Pull Request approval turns into a lavish, flattering, one-page-long description of how great the code is, how extensive the test coverage is, and how brilliant the architectural choices are. No one has the time to read those reviews, and ultimately engineers stop paying attention. And even if the LLM does surface a real issue, chances are it’s going to be lost in the noise of dozens of good-to-haves and minor, irrelevant nitpicks.\n\nThis is a story of how we built an LLM code review bot that behaves as a senior engineer – surfacing important, actionable violations of human-curated guidance and maximising signal-to-noise ratio.",
       "track": "Developer Experience",
       "type": "Keynote/Talk",
       "stage": "Stage 11",

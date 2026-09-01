@@ -43,7 +43,7 @@ This session introduces an alternative: using Confidential Computing - a set of 
 
 *Executive Director — Confidential Computing Consortium*
 
-﻿Mike Bursell is the Executive Director of the Confidential Computing Consortium. He is one of the co-founders of the Enarx project (https://enarx.dev), and was CEO and co-founder of Profian, a start-up based on Enarx.  He has previously served on the Governing Boards of the CCC and the Bytecode Alliance and currently holds advisory board roles with various start-ups.  Previous companies include Red Hat, Intel and Citrix, with roles in security, virtualisation and networking.
+Mike Bursell is the Executive Director of the Confidential Computing Consortium. He is one of the co-founders of the Enarx project (https://enarx.dev), and was CEO and co-founder of Profian, a start-up based on Enarx.  He has previously served on the Governing Boards of the CCC and the Bytecode Alliance and currently holds advisory board roles with various start-ups.  Previous companies include Red Hat, Intel and Citrix, with roles in security, virtualisation and networking.
 
 Mike is author of "Trust in Computer Systems and the Cloud", published by Wiley in 2021.
 
