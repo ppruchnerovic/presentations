@@ -8,14 +8,21 @@ on:
 permissions:
   contents: write
 
+# The same group as the publish job in kb-refresh.yml, so the two force-pushes
+# of gh-pages never interleave. A queued run supersedes an older queued one
+# rather than cancelling a push in flight.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      # The tip of main, not the commit that triggered this run: a refresh may
+      # have landed in between, and the newest tree is the one to publish.
       - uses: actions/checkout@v4
+        with:
+          ref: main
       # GitHub Pages serves the gh-pages branch; mirror main into it.
       - run: git push origin HEAD:gh-pages --force

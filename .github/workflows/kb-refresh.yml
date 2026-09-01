@@ -48,18 +48,41 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add kb
           git commit -m "Refresh talk knowledge base from the WeAreDevelopers API"
+          # A commit that landed on main since checkout used to fail this push,
+          # and with it the publish step below. Nothing outside kb/ is touched
+          # here, so replaying the refresh on top of main is always clean.
+          git pull --rebase origin main
           git push
           echo "changed=true" >> "$GITHUB_OUTPUT"
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
 
-      # The push above does NOT start `Deploy GitHub Pages`: GitHub suppresses
-      # workflow triggers from pushes made with the default GITHUB_TOKEN, to
-      # avoid recursive runs. So a refresh used to land in main and then sit
-      # there unpublished until somebody happened to push for another reason —
-      # up to a week of the live search serving stale data.
-      #
-      # Mirror to gh-pages here instead, which is all pages.yml does anyway.
-      # Updating gh-pages *does* publish, because GitHub's built-in Pages build
-      # is not a repository workflow and is not subject to that suppression.
+  # The push above does NOT start `Deploy GitHub Pages`: GitHub suppresses
+  # workflow triggers from pushes made with the default GITHUB_TOKEN, to avoid
+  # recursive runs. So a refresh used to land in main and then sit there
+  # unpublished until somebody happened to push for another reason — up to a
+  # week of the live search serving stale data.
+  #
+  # Mirror to gh-pages here instead, which is all pages.yml does anyway.
+  # Updating gh-pages *does* publish, because GitHub's built-in Pages build is
+  # not a repository workflow and is not subject to that suppression.
+  #
+  # This is its own job so it can share pages.yml's concurrency group: the two
+  # publishers force-push the same branch, and under different groups a human
+  # push that started pages.yml mid-refresh could publish the pre-refresh tree
+  # *after* this had published the new one. Both now check out the tip of main
+  # rather than the commit that triggered them, so whichever runs last
+  # publishes the newest tree either way.
+  publish:
+    needs: refresh
+    if: needs.refresh.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
       - name: Publish the refreshed data
-        if: steps.commit.outputs.changed == 'true'
         run: git push origin HEAD:gh-pages --force

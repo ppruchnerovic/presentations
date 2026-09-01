@@ -560,7 +560,9 @@ BLOCK_ADVICE = (
 
 
 def out_path(out_dir: Path, v: dict) -> Path:
-    return out_dir / f"{v['video_id']}.json"
+    """<video_id>.json, unless the entry names its own stem in `file` — a corpus
+    keyed by its own ids (the WeAreDevelopers kb, by talk id) sets that."""
+    return out_dir / f"{v.get('file') or v['video_id']}.json"
 
 
 def save(out_dir: Path, v: dict, segments, lang, generated, timing, source) -> int:
@@ -690,7 +692,11 @@ def run_parallel(api, todo, misses, args, out_dir):
     return ok, fail, blocked.is_set()
 
 
-def main() -> None:
+def main(argv: list[str] | None = None, work: list[dict] | None = None) -> int:
+    """Run the fetch. `argv` defaults to the command line; `work` is a ready
+    video list (dicts with `video_id`, optionally `title`, `talk_id`, `file`)
+    that replaces --from / --playlist / positional ids — for a wrapper that
+    knows its own corpus. Returns how many transcripts were fetched."""
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("videos", nargs="*", help="video ids or URLs")
@@ -735,7 +741,7 @@ def main() -> None:
                          "network is usable right now, then exit")
     ap.add_argument("--probe-video", default="dQw4w9WgXcQ",
                     help="video id used by --probe")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
     args.languages = [l.strip() for l in args.languages.split(",") if l.strip()] \
         or list(LANGUAGES)
 
@@ -750,7 +756,7 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     misses_path = out_dir / "_misses.json"
 
-    videos = load_work(args)
+    videos = work if work is not None else load_work(args)
     if not videos:
         sys.exit("no videos to fetch — pass ids, --from FILE or --playlist URL")
 
@@ -806,6 +812,7 @@ def main() -> None:
     write_json(misses_path, misses)
     print(f"\ndone: {total_ok} fetched, {total_fail} missed. "
           f"Misses recorded in {misses_path}")
+    return total_ok
 
 
 if __name__ == "__main__":

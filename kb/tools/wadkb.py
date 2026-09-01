@@ -7,6 +7,7 @@ from anywhere.
 from __future__ import annotations
 
 import json
+import os
 import pathlib
 import re
 import unicodedata
@@ -110,13 +111,19 @@ def load_transcript(talk_id: int) -> dict | None:
 
 
 def write_json(path: pathlib.Path, obj, compact: bool = False) -> None:
+    """Write JSON through a temporary file and rename, so a Ctrl-C mid-write
+    leaves the old file or none — never a truncated one that makes the next
+    `load_transcript()` raise and takes sync_agenda.py and build_index.py down
+    with it."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
+    tmp = path.with_name(path.name + ".tmp")
+    with tmp.open("w", encoding="utf-8") as f:
         if compact:
             json.dump(obj, f, ensure_ascii=False, separators=(",", ":"))
         else:
             json.dump(obj, f, ensure_ascii=False, indent=2)
             f.write("\n")
+    os.replace(tmp, path)
 
 
 def human_size(n: float) -> str:
