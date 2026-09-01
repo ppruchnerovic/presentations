@@ -2,14 +2,14 @@
 name: conference-talks
 description: |
   Answer questions from the WeAreDevelopers conference talk knowledge base —
-  358 recorded talks from World Congress 2026 Berlin with abstracts, speakers,
-  track/type/stage tags, YouTube recordings and a full transcript for every
-  talk. Use this whenever the user asks what was said at the conference, who
-  talked about a topic, what different speakers think about something, which
-  talks to watch on a subject, or asks to compare or synthesize positions
-  across presenters — e.g. "how do people say to do AI-driven SDLC", "what did
-  speakers say about agent security", "find me talks about spec-driven
-  development", "who disagreed about vibe coding".
+  every recorded talk from World Congress 2026 Berlin (about 360) with
+  abstracts, speakers, track/type/stage tags, YouTube recordings and a full
+  transcript for every talk. Use this whenever the user asks what was said at
+  the conference, who talked about a topic, what different speakers think
+  about something, which talks to watch on a subject, or asks to compare or
+  synthesize positions across presenters — e.g. "how do people say to do
+  AI-driven SDLC", "what did speakers say about agent security", "find me
+  talks about spec-driven development", "who disagreed about vibe coding".
   Also use it to pull a specific talk's recording link, abstract or tags.
   Do NOT use it for talks outside the WeAreDevelopers corpus.
 ---
@@ -21,7 +21,7 @@ the repo root. If you are working from a different checkout, clone
 `https://github.com/ppruchnerovic/presentations` and run the commands there.
 
 ```
-kb/data/talks.json          canonical records (358 talks with recordings)
+kb/data/talks.json          canonical records, one per talk with a recording
 kb/data/transcripts/<id>.json   timestamped transcript segments, one per talk
 kb/data/talks.db            SQLite FTS5 index — the thing you actually query
 kb/talks/<event>/<id>-<slug>.md  one readable file per talk
@@ -36,24 +36,52 @@ failure mode that makes this KB worthless.
 Two commands, in this order. Every command runs from the repo root; the tools
 resolve their own paths, so there is nothing to `cd` into.
 
-## 1. `query.py --brief` — choose the talks
+## 1. `query.py --json --brief` — choose the talks
 
 ```bash
-python3 kb/tools/query.py "spec driven development" -n 12 --brief
+python3 kb/tools/query.py "spec driven development" -n 12 --json --brief
 ```
 
-`--brief` gives you what choosing needs and nothing else: id, title, speakers,
-track, duration, recording link, `has_transcript`, the abstract snippet and two
-timestamped transcript moments. Add `--json` for the same fields machine-
-readable. Plain `--json` returns the full record — tags, companies, stage, type,
-`session_page` — and is worth the bytes only when the question is *about* those
-fields.
+`--json --brief` gives you what choosing needs and nothing else: id, score,
+title, speakers, track, duration, recording link, `has_transcript`, the
+abstract snippet and two timestamped transcript moments — one line of JSON per
+talk, no colour codes. Plain `--json` returns the full record — tags,
+companies, stage, type, `session_page`, four moments — and is worth the bytes
+only when the question is *about* those fields. Text mode without `--json` is
+for a person at a terminal.
+
+**Search for the topic words only — never the words of the question.** "what",
+"say", "speakers", "think", "different", "about" are not in any talk, and
+until recently ANDing them in returned nothing at all. Now the stopwords among
+them are dropped and the rest is rescued by relaxation (below), but they still
+dilute the ranking. The user asks *"what do different speakers think about
+vibe coding"*; you search `vibe coding`.
+
+A bare query ANDs its words: every one must appear in the talk's metadata or
+transcript. Hyphens are spaces (`AI-driven SDLC` searches the same as `ai
+driven sdlc`). When the strict AND finds fewer than `-n` talks, the list is
+topped up with talks matching an OR of the same words, **after** the strict
+hits and flagged `"relaxed": true` in the JSON. A relaxed hit matched some of
+your words, not all — treat it as a lead to check in step 2, not as evidence.
 
 Useful flags: `--track "AI Agents"`, `--type Keynote/Talk`, `--stage "Stage 1"`,
-`-n 25`, `--no-moments`, `--ids`. (`--event` exists too, but this corpus holds
-one event.) FTS5 syntax works: `"exact phrase"`, `OR`, `NOT`, `prefix*` — with
-porter stemming, so `"quantum computing"` legitimately matches a passage saying
-"quantum computers". Phrase search is stem-based, not literal.
+`-n 25`, `--no-moments`, `--ids`. Facet values are exact and case-sensitive;
+`python3 kb/tools/query.py --facets` lists every one with counts, so run that
+rather than guess. Today's tracks: AI Agents, AI Engineering, Backend & APIs,
+Career & Growth, Cloud & AI Infrastructure, Data & Databases, DevOps, Developer
+Experience, Emerging Technologies, Engineering Leadership, Experience &
+Activities, Frontend, Web & Mobile, Languages & Runtimes, People & Culture,
+Quality & Reliability, Security & Privacy, Software Architecture, Strategy &
+Innovation, Talent Strategy (a handful of talks have none); types:
+`Keynote/Talk`, `Panel/Fireside Chat`, `Lightning Talk`, `Startup
+Presentation`, `Experience & Activities`. (`--event` exists too, but this
+corpus holds one event.)
+
+FTS5 syntax works: `"exact phrase"`, `OR`, `NOT`, `prefix*` — with porter
+stemming, so `"quantum computing"` legitimately matches a passage saying
+"quantum computers". Phrase search is stem-based, not literal. A query that
+uses any of this is passed through as written: not split, not stopword-
+stripped, not relaxed — you said what you wanted.
 
 **Cover the vocabulary inside one query, not across five.** A bare two-word
 query ANDs its terms across unrelated talks: `agent security` ranks the
@@ -63,12 +91,26 @@ one `OR` and FTS5 ranks the union for you — a talk hitting several of the term
 rises by itself:
 
 ```bash
-python3 kb/tools/query.py 'agent OR agents OR "prompt injection" OR guardrails OR identity OR "trust boundary"' -n 12 --brief
+python3 kb/tools/query.py 'agent OR agents OR "prompt injection" OR guardrails OR identity OR "trust boundary"' -n 12 --json --brief
 ```
 
 That puts the sudo talk 2nd and surrounds it with the neighbouring talks that
 actually answer the question. Five separate searches unioned by hand find much
 the same thing and are paid for five times.
+
+**When a search comes back thin or empty**, in this order, one retry: (1) drop
+the rarest word — a product name or a number the speaker may never have said;
+(2) rewrite as `a OR b OR c` with the domain's synonyms; (3) try the
+conference's own vocabulary — the tags on the abstracts (`Agentic AI`, `AI
+Coding Assistants`, `Security`, `Developer Experience (DevEx)`, `Large
+Language Models (LLMs)`…), which plain `--json` returns as `tags` and which
+are an indexed field. One search, then one retry, then say the corpus is
+thin. Do not loop.
+
+**Speakers.** `speakers` is an indexed field, weighted above the abstract, so
+`python3 kb/tools/query.py "Julian Wood" --json --brief` puts their talk
+first. For "what did <name> say about <topic>", take the id from that and run
+`excerpt.py <id> -q "<topic>"`.
 
 `abstract_snippet` is `""` whenever the hit came from the transcript layer
 only: the query did not match the abstract, **not** that the talk has none.
@@ -85,6 +127,11 @@ Or pipe step 1 straight into it:
 ```bash
 cd kb/tools && python3 query.py "agent memory" -n 6 --ids | xargs python3 excerpt.py -q "agent memory"
 ```
+
+`-q` takes the **topic**, the same words you searched with, not the user's
+question. The excerpt's own relaxation copes with a question, but every extra
+word is another thing for the passage ranker to reward, and the excerpt is
+cleaner without them.
 
 For each talk it prints the metadata, the full abstract, the **opening** — where
 the speaker states what they are about to argue — and a window of speech either
@@ -137,12 +184,15 @@ to learn one paragraph, so nothing but this section will tell you.
 
 ## Notes and limits
 
-- **Every talk has an exact-timed transcript.** All 358 of them —
-  `has_transcript = 1` throughout, `"timing": "exact"`, `"source": "yt"`,
-  1,513,943 words over 53,982 indexed passages — so no answer here ever has to
-  rest on an abstract alone. Word counts are the `transcript_words` column in
-  `talks.db` and `word_count` in the transcript JSON; they are *not* `w`, which
-  is a compact key in `kb/data/search-meta.json` that only the browser UI reads.
+- **Every talk has an exact-timed transcript.** `has_transcript = 1`
+  throughout, `"timing": "exact"`, `"source": "yt"`, about 1.5 M words over
+  some 54,000 indexed passages — so no answer here ever has to rest on an
+  abstract alone. The exact figures move with every refresh; when you need
+  them, `n_docs` in `kb/data/tindex/_manifest.json` is the talk count and
+  `python3 kb/tools/query.py --facets` totals the rest. Word counts are the
+  `transcript_words` column in `talks.db` and `word_count` in the transcript
+  JSON; they are *not* `w`, which is a compact key in
+  `kb/data/search-meta.json` that only the browser UI reads.
   Deep links land on a **passage boundary**, not on the word: captions are
   grouped into ~28-word passages and a passage keeps its first caption's start,
   so the phrase you searched is spoken 0–4 seconds *after* the timestamp and
@@ -162,8 +212,9 @@ to learn one paragraph, so nothing but this section will tell you.
 - Refresh metadata from the conference API any time:
   `python3 kb/tools/sync_agenda.py` (public endpoint, no auth).
 - Transcripts must be fetched from a normal network connection —
-  `python3 kb/tools/fetch_transcripts.py`. YouTube blocks datacenter IPs, so
-  this fails from CI and cloud containers.
+  `python3 kb/tools/fetch_transcripts.py --probe` first, to learn whether the
+  network is usable. YouTube blocks datacenter IPs, so this fails from CI and
+  cloud containers. The fetcher itself is the `conference-transcripts` skill's.
 - Non-technical colleagues can use the same corpus without installing anything
   at <https://ppruchnerovic.github.io/presentations/kb/> — the search UI
   supports shareable URLs, so you can hand someone a link to a live query.
