@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-17T13:27:22+00:00",
+  "generated_at": "2026-09-01T07:34:49+00:00",
   "source": "https://wad-api.wearedevelopers.com/api/v2/events/<id> (public, no auth)",
   "events": [
     {
@@ -3651,7 +3651,7 @@
           "name": "Aurélie Vache",
           "company": "OVHcloud",
           "position": "Developer Advocate",
-          "bio": "Aurélie Vache is a Developer Advocate at OVHcloud in Toulouse, France. She is Docker Captain, CNCF ambassador, Google Cloud Developer Expert, Women techmarkers Ambassador & GitPod Hero. She has been working as a Developer and Ops for over 18 years. Cloud enthusiast and advocates DevOps/Cloud/Golang best practices.\n\nConferences and meetups organizer since 2016. Technical writer (dev.to/aurelievache), a book author & reviewer, a sketchnoter and a speaker at international conferences.\n\nMentor and promote diversity and accessibility in technology.\n\nShe created a new visual way for people to learn and understand Cloud technologies: \"Understanding Kubernetes/Istio/Docker in a visual way\" in sketchnotes, books and videos.\n\nBlog: https://dev.to/aurelievache/\nYouTube: https://www.youtube.com/c/AurelieVache",
+          "bio": "Aurélie Vache is a Developer Advocate at OVHcloud in Toulouse, France. She is Docker Captain, CNCF ambassador, Google Cloud Developer Expert, Women techmarkers Ambassador & GitPod Hero. She has been working as a Developer and Ops for over 18 years. Cloud enthusiast and advocates DevOps/Cloud/Golang best practices.\n\nConferences and meetups organizer since 2016. Technical writer (dev.to/aurelievache), a book author & reviewer, a sketchnoter and a speaker at international conferences.\n\nMentor and promote diversity and accessibility in technology.\n\nShe created a new visual way for people to learn and understand Cloud technologies: \"Understanding Kubernetes/Istio/Docker in a visual way\" in sketchnotes, books and videos.\n\n\n\nBlog: https://dev.to/aurelievache/\nYouTube: https://www.youtube.com/c/AurelieVache",
           "image": "https://imagedelivery.net/p2Gwf4g3bNtyXUmnEu9Kdw/speakers/world-congress-europe/24cbeef1-2467-4bd6-9a0e-a931b625f3d5/card?format=auto",
           "links": {}
         }

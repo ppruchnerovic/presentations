@@ -53,6 +53,8 @@ Mentor and promote diversity and accessibility in technology.
 
 She created a new visual way for people to learn and understand Cloud technologies: "Understanding Kubernetes/Istio/Docker in a visual way" in sketchnotes, books and videos.
 
+
+
 Blog: https://dev.to/aurelievache/
 YouTube: https://www.youtube.com/c/AurelieVache
 
