@@ -95,7 +95,14 @@ def to_passages(segs: list[dict]) -> list[dict]:
             out.append({"start": start, "text": " ".join(texts)})
             texts, words = [], 0
     if texts:
-        out.append({"start": start, "text": " ".join(texts)})
+        # A talk's last few words ("Thank you. [applause]") are not a passage.
+        # Left on their own, bm25's length normalisation would over-score any
+        # real word that happened to land there, so a short tail joins the
+        # passage before it.
+        if out and words < PASSAGE_WORDS / 2:
+            out[-1]["text"] += " " + " ".join(texts)
+        else:
+            out.append({"start": start, "text": " ".join(texts)})
     return out
 
 
@@ -185,6 +192,19 @@ def encode_positions(seg_ids: list[int]) -> str:
     return ".".join(parts)
 
 
+def keep_singleton(term: str) -> bool:
+    """Whether a term said once, in one talk, still earns a posting.
+
+    The browser needs *every* query term to match somewhere, so a word missing
+    from the index makes the search that contains it show "Nothing matched".
+    Pruning every singleton dropped 8,983 of 23,027 terms, and 6,677 of those
+    were ordinary words — a name, a product, a place, said once in the one
+    talk that is about it, which is exactly the search that ought to find it.
+    Digits and fragments stay pruned; a word does not.
+    """
+    return term.isalpha() and len(term) >= 4
+
+
 def build_browser_index(talks: list[dict]) -> dict:
     """Compact metadata file + sharded transcript postings for client-side search."""
     meta = []
@@ -248,8 +268,8 @@ def build_browser_index(talks: list[dict]) -> dict:
 
     shards: dict[str, dict] = collections.defaultdict(dict)
     for term, docs in postings.items():
-        if len(docs) == 1 and max(docs.values()) < 2:
-            continue  # a term used once in one talk is noise, not a search key
+        if len(docs) == 1 and max(docs.values()) < 2 and not keep_singleton(term):
+            continue  # a number or fragment used once in one talk is noise
         idf = math.log(1 + (n_docs - len(docs) + 0.5) / (len(docs) + 0.5))
         pos = positions.get(term, {})
         shards[shard_key(term)][term] = {

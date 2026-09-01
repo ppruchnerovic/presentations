@@ -7,6 +7,8 @@
 // assertion vacuous.
 
 const L = require('./lib');
+const fs = require('fs');
+const path = require('path');
 
 L.suite('moments', async browser => {
   // ---------- the passages themselves ----------
@@ -109,6 +111,49 @@ L.suite('moments', async browser => {
     } else {
       L.check('a term that is never spoken in a talk says so', false, 'could not construct the case');
     }
+    await page.close();
+  }
+
+  // ---------- two words, said together ----------
+  // Moments are ranked on the window that is shown, not on one ~6-word
+  // caption: a two-word query almost never lands inside a single caption, so
+  // scored that way the moments offered were wherever either word happened to
+  // be, not where the speaker said them together — which is what put the talk
+  // in the results in the first place.
+  {
+    const page = await L.newPage(browser);
+    await L.boot(page);
+    // Two words the top talk says together but not side by side — a phrase
+    // like "vibe coding" shares a caption and would pass either way. Against
+    // the caption-by-caption scorer this reads 2 of 6; against the window
+    // scorer, 6 of 6.
+    const [A, B] = ['agent', 'security'];
+    await L.search(page, `${A} ${B}`);
+    const card = page.locator('#results .card').first();
+    const id = Number(await card.getAttribute('data-id'));
+    await card.locator('.mo-load').click();
+    await page.waitForSelector('#results .card .moments .mo', { timeout: 15000 });
+    // How many windows in this talk say both words, at least 60s apart. The
+    // page's tokeniser is inside its closure, so this is a small replica of
+    // it — prefix matching included, as the page does for words of 4+ letters
+    // — and MO_SPAN = 2 is the page's window width.
+    const tr = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'data', 'transcripts', `${id}.json`), 'utf8'));
+    const segs = tr.segments || [];
+    const toks = segs.map(x => (x.text.toLowerCase().match(/[a-z0-9][a-z0-9+#.\-]*/g) || [])
+      .map(t => t.replace(/^[.\-]+|[.\-]+$/g, '')));
+    const says = (i, w) => toks[i].some(t => t.startsWith(w));
+    let both = 0, last = -Infinity;
+    for (let i = 0; i < segs.length; i++) {
+      const lo = Math.max(0, i - 2), hi = Math.min(segs.length - 1, i + 2);
+      let a = false, b = false;
+      for (let j = lo; j <= hi; j++) { a = a || says(j, A); b = b || says(j, B); }
+      if (a && b && segs[i].start - last >= 60) { both++; last = segs[i].start; }
+    }
+    const rows = await card.locator('.mo').allTextContents();
+    const withBoth = rows.filter(r => new RegExp(`\\b${A}`, 'i').test(r) && new RegExp(`\\b${B}`, 'i').test(r)).length;
+    L.check('the moments shown for a two-word query are the ones that say both words',
+      both > 0 && withBoth >= Math.min(6, both),
+      `${withBoth} of ${rows.length} moments say both; the talk (#${id}) has ${both} such windows`);
     await page.close();
   }
 

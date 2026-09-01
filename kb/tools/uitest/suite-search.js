@@ -97,6 +97,15 @@ L.suite('search', async browser => {
   L.check('talks matched only by what was said are counted separately', !!spoken,
     spoken || 'no sampled query surfaced a transcript-only hit');
 
+  // A word said once, in one talk, is the sharpest search key there is — the
+  // index used to prune every such term, and the AND across query terms then
+  // turned the search into "Nothing matched". The word is chosen offline to be
+  // a transcript singleton that no title, abstract or tag starts with.
+  await L.search(page, 'torvalds');
+  const single = await L.cardIds(page);
+  L.check('a word spoken once in the whole corpus finds exactly that talk',
+    single.length === 1 && single[0] === 586, `ids=[${single.join(',')}]`);
+
   // ---------- compounds and punctuation ----------
   await L.search(page, 'spec driven development');
   L.check('"spec driven" matches the hyphenated "spec-driven"',

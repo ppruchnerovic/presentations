@@ -248,7 +248,15 @@ const esc = s => String(s == null ? '' : s)
 
 // ---------- loading ----------
 async function boot() {
-  const meta = await fetch('data/search-meta.json').then(r => r.json());
+  // The manifest carries the stopword list, and tokenize() consults it, so it
+  // has to be in place before the metadata is tokenised below — otherwise the
+  // per-field sets keep stopwords that a query, tokenised later, never has.
+  const [meta] = await Promise.all([
+    fetch('data/search-meta.json').then(r => r.json()),
+    fetch('data/tindex/_manifest.json').then(r => r.ok ? r.json() : null)
+      .then(m => { MANIFEST = m; if (m) STOP = new Set(m.stopwords); })
+      .catch(() => { MANIFEST = null; }),
+  ]);
   TALKS = meta.talks;
   TALKS.forEach(t => {
     BY_ID.set(t.i, t);
@@ -267,11 +275,6 @@ async function boot() {
     t._tok = new Set();
     for (const s of Object.values(t._f)) for (const x of s) t._tok.add(x);
   });
-  try {
-    MANIFEST = await fetch('data/tindex/_manifest.json').then(r => r.ok ? r.json() : null);
-    if (MANIFEST) STOP = new Set(MANIFEST.stopwords);
-  } catch (_) { MANIFEST = null; }
-
   // Document frequency over the metadata, so a rare word like "sdlc" outweighs
   // a word like "ai" that half the conference uses.
   for (const t of TALKS) for (const tok of t._tok) DF.set(tok, (DF.get(tok) || 0) + 1);
@@ -545,6 +548,9 @@ function render(result) {
 }
 
 // ---------- transcript moments, fetched per talk on demand ----------
+// Captions either side of a hit that a moment scores and shows.
+const MO_SPAN = 2;
+
 async function showMoments(id, slot, terms) {
   slot.innerHTML = '<div class="moments"><span class="spinner"></span></div>';
   let tr = TRANSCRIPTS.get(id);
@@ -562,14 +568,26 @@ async function showMoments(id, slot, terms) {
   }
 
   const segs = tr.segments || [];
+  // Token matching, not substring: searching "rust" must not offer up every
+  // moment where someone said "trust". Same rule the index itself uses.
+  const toks = segs.map(s => new Set(tokenize(s.text)));
+  // A caption is ~6 words, so a two-word query almost never lands inside one:
+  // scored caption by caption, the co-occurrence that put the talk in the
+  // results was invisible here. Score the window that is displayed instead —
+  // MO_SPAN captions either side, about the ~28-word passage the index ranks —
+  // and count the distinct query terms it holds. The deep link stays on the
+  // centre caption, which has to say at least one of the words itself.
   const scored = [];
   for (let i = 0; i < segs.length; i++) {
-    // Token matching, not substring: searching "rust" must not offer up every
-    // moment where someone said "trust". Same rule the index itself uses.
-    const toks = new Set(tokenize(segs[i].text));
+    if (!terms.some(t => fieldHit(toks[i], t))) continue;
     let n = 0;
-    for (const t of terms) n += fieldHit(toks, t);
-    if (n) scored.push({ i, n, start: segs[i].start });
+    for (const t of terms) {
+      for (let j = Math.max(0, i - MO_SPAN); j <= Math.min(segs.length - 1, i + MO_SPAN); j++) {
+        const h = fieldHit(toks[j], t);
+        if (h) { n += h; break; }
+      }
+    }
+    scored.push({ i, n, start: segs[i].start });
   }
   if (!scored.length) {
     slot.innerHTML = '<div class="moments"><small>None of those words are spoken in this talk.</small></div>';
@@ -587,7 +605,7 @@ async function showMoments(id, slot, terms) {
   const vid = BY_ID.get(id).u;
   slot.innerHTML = `<div class="moments"><div class="mo-head">Moments in the talk</div>` +
     picked.map(s => {
-      const ctx = segs.slice(Math.max(0, s.i - 1), s.i + 2).map(x => x.text).join(' ');
+      const ctx = segs.slice(Math.max(0, s.i - MO_SPAN), s.i + MO_SPAN + 1).map(x => x.text).join(' ');
       const mm = Math.floor(s.start / 60), ss = String(Math.floor(s.start % 60)).padStart(2, '0');
       return `<div class="mo">
         <a class="ts" href="https://www.youtube.com/watch?v=${vid}&t=${Math.floor(s.start)}s"

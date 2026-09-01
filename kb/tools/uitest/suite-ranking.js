@@ -22,14 +22,14 @@ const CLI_QUERIES = ['spec driven development', 'ai driven sdlc', 'code review',
   'rust', 'prompt injection', 'developer experience', 'observability'];
 
 // Measured agreement between the two rankers on the corpus as it stands (358
-// talks), counted as overlap / min(10, hits the CLI returned):
+// talks), counted as overlap / min(10, strict hits the CLI returned):
 //
 //   spec driven development  8/8  1.00     rust                  7/10  0.70
 //   ai driven sdlc           1/1  1.00     code review           6/10  0.60
 //   kubernetes               8/10 0.80     developer experience  6/10  0.60
 //   prompt injection         7/10 0.70     observability         4/10  0.40
 //
-// Mean 0.72; and for the seven queries the CLI answers with enough rows to rank
+// Mean 0.73; and for the seven queries the CLI answers with enough rows to rank
 // at all, the browser's own top hit is somewhere in the CLI's top 10 in all
 // seven cases. The bar this replaced — overlap >= min(4, cli.length) — was met
 // exactly by "observability", so every query in the list could have decayed to
@@ -38,7 +38,7 @@ const CLI_QUERIES = ['spec driven development', 'ai driven sdlc', 'code review',
 // let a uniform collapse to the per-query floor through.
 const FLOOR = 0.40;   // no single query may agree less than this
 const WEAK  = 0.50;   // ... and at most one may sit below this (today: observability)
-const MEAN  = 0.60;   // the eight taken together (today 0.72)
+const MEAN  = 0.60;   // the eight taken together (today 0.73)
 
 // A query whose answer is not in doubt, and the shape its top hit must have.
 const ON_TOPIC = {
@@ -57,8 +57,11 @@ L.suite('ranking', async browser => {
   } else {
     const rows = [];
     for (const q of CLI_QUERIES) {
+      // Only the strict hits: query.py tops a short list up with an OR of the
+      // words, flagged `relaxed`, and the browser has no such mode — every
+      // query term has to match — so those rows say nothing about agreement.
       const cli = JSON.parse(execFileSync('python3', ['query.py', q, '-n', '10', '--json'],
-        { cwd: TOOLS, maxBuffer: 1 << 26 }).toString()).map(h => h.id);
+        { cwd: TOOLS, maxBuffer: 1 << 26 }).toString()).filter(h => !h.relaxed).map(h => h.id);
       await L.search(page, q);
       const web = (await L.cardIds(page)).slice(0, 10);
       const overlap = web.filter(i => cli.includes(i)).length;
