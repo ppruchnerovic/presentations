@@ -36,10 +36,38 @@ def fetch_event(event_id: int) -> dict:
         return json.load(r)["data"]
 
 
+# Characters the event API leaks into otherwise fine text. They are invisible
+# in the CMS preview, so nobody upstream ever sees them, but they reach every
+# artefact we publish. The rule below is deliberately narrow: scrub what renders
+# as nothing, keep what renders as a glyph. Accented and non-Latin speaker names,
+# typographic quotes, en/em/non-breaking dashes, NBSP and emoji (including the
+# U+FE0F variation selector) are legitimate corpus content and must survive.
+SCRUB = {
+    # Zero-width. Seen as a BOM glued to the front of a speaker bio, where it
+    # corrupts the first token for every downstream tokenizer and sort.
+    0xFEFF: None,  # ZERO WIDTH NO-BREAK SPACE / BOM
+    0x200B: None,  # ZERO WIDTH SPACE
+    0x2060: None,  # WORD JOINER (U+FEFF's modern stand-in, same noise)
+    # Unicode line/paragraph separators. Pasted in where a blank line belongs:
+    # they render as a hard break with no space, and JS treats them as real line
+    # terminators, so they would break search-meta.json the day it gets inlined
+    # into a <script> block. "\n\n" is the paragraph break the API otherwise
+    # sends and the one the markdown template expects.
+    0x2028: "\n\n",  # LINE SEPARATOR
+    0x2029: "\n\n",  # PARAGRAPH SEPARATOR
+    # Lone CR (old-Mac line ending); CRLF is folded just below.
+    0x0D: "\n",
+}
+# Stray C0/C1 controls, minus the whitespace we handle on purpose.
+SCRUB.update({c: None for c in range(0x00, 0x20) if c not in (0x09, 0x0A, 0x0D)})
+SCRUB.update({c: None for c in range(0x7F, 0xA0)})
+
+
 def clean(text: str | None) -> str:
     if not text:
         return ""
-    return "\n".join(line.rstrip() for line in text.replace("\r\n", "\n").split("\n")).strip()
+    text = text.replace("\r\n", "\n").translate(SCRUB)
+    return "\n".join(line.rstrip() for line in text.split("\n")).strip()
 
 
 def build_speaker(sp: dict) -> dict:

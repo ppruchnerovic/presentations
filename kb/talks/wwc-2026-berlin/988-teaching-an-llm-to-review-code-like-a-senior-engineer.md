@@ -31,7 +31,13 @@ transcript: true
 
 ## Abstract
 
-There’s no doubt LLMs can generate plausible, working code – but can we trust them to review it? Being a helpful assistant is deeply ingrained in an LLM’s nature, but when it comes to code reviews, this works against us. What could have been a simple Pull Request approval turns into a lavish, flattering, one-page-long description of how great the code is, how extensive the test coverage is, and how brilliant the architectural choices are. No one has the time to read those reviews, and ultimately engineers stop paying attention. And even if the LLM does surface a real issue, chances are it’s going to be lost in the noise of dozens of good-to-haves and minor, irrelevant nitpicks. This is a story of how we built an LLM code review bot that behaves as a senior engineer – surfacing important, actionable violations of human-curated guidance and maximising signal-to-noise ratio.
+There’s no doubt LLMs can generate plausible, working code – but can we trust them to review it?
+
+Being a helpful assistant is deeply ingrained in an LLM’s nature, but when it comes to code reviews, this works against us.
+
+What could have been a simple Pull Request approval turns into a lavish, flattering, one-page-long description of how great the code is, how extensive the test coverage is, and how brilliant the architectural choices are. No one has the time to read those reviews, and ultimately engineers stop paying attention. And even if the LLM does surface a real issue, chances are it’s going to be lost in the noise of dozens of good-to-haves and minor, irrelevant nitpicks.
+
+This is a story of how we built an LLM code review bot that behaves as a senior engineer – surfacing important, actionable violations of human-curated guidance and maximising signal-to-noise ratio.
 
 ## Speakers
 
